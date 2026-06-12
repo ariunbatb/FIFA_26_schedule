@@ -264,11 +264,13 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   }
   .clear-filter.show{display:inline-block;}
   @media(max-width:560px){
-    .filter-bar{padding:12px 18px; gap:10px;}
-    .filter-group{width:100%;}
-    .filter-bar select{flex:1; width:100%; min-width:0;}
-    .today-btn, .clear-filter{width:100%;}
-    .clear-filter.show{display:block;}
+    .filter-bar{padding:10px 14px; gap:7px; flex-wrap:nowrap;}
+    .filter-bar label{display:none;}
+    .filter-group{flex:1; min-width:0;}
+    .filter-bar select{flex:1; width:100%; min-width:0; padding:6px 8px; font-size:.8rem;}
+    .today-btn{flex:none; padding:6px 10px; font-size:.76rem; white-space:nowrap;}
+    .clear-filter{padding:6px 10px; font-size:.76rem; white-space:nowrap;}
+    .clear-filter.show{display:inline-block;}
   }
   #empty{
     display:none; text-align:center; color:var(--muted);
