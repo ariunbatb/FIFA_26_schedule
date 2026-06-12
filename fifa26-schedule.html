@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДАШТ 2026 — Тоглолтын хуваарь</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#15243b; --muted:#64748b;
+    --accent:#0e7a4d; --accent2:#1d4ed8; --line:#e2e8f0;
+    --hl:#fff7e0; --hl-border:#f0b429;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:40px;
+  }
+  header{
+    background:linear-gradient(135deg,#0e7a4d 0%,#1d4ed8 60%,#b91c1c 100%);
+    color:#fff; text-align:center; padding:24px 16px 18px;
+  }
+  header h1{font-size:1.6rem; letter-spacing:.5px;}
+  header p{opacity:.92; margin-top:4px; font-size:.85rem;}
+  .legend{
+    margin:10px auto; padding:0 16px;
+    color:var(--muted); font-size:.78rem; text-align:center;
+  }
+  .container{width:100%; padding:0 18px;}
+  .days-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    align-items:start;
+  }
+  @media(max-width:980px){.days-grid{grid-template-columns:1fr;}}
+  .day{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px 14px; box-shadow:0 1px 2px rgba(15,23,42,.05);
+  }
+  .day-header{
+    display:flex; align-items:center; gap:8px; margin-bottom:10px;
+  }
+  .day-header h2{font-size:.95rem; white-space:nowrap;}
+  .day-header .rule{flex:1; height:1px; background:var(--line);}
+  .stage-tag{
+    font-size:.62rem; font-weight:700; letter-spacing:.5px;
+    color:#fff; background:var(--accent2); border-radius:99px; padding:2px 9px;
+    white-space:nowrap;
+  }
+  .grid{
+    display:grid; gap:8px;
+    grid-template-columns:repeat(auto-fill, minmax(225px, 1fr));
+  }
+  .match{
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    padding:8px 10px; transition:all .18s ease;
+  }
+  .match .top{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:.64rem; color:var(--muted); margin-bottom:6px;
+  }
+  .match .top .time{
+    font-size:.88rem; font-weight:800; color:var(--ink);
+    background:#fff; border:1px solid var(--line);
+    padding:1px 9px; border-radius:7px;
+  }
+  .match .group-badge{
+    font-weight:700; color:var(--accent);
+    background:#e8f5ef; padding:1px 7px; border-radius:99px;
+  }
+  .match .group-badge.ko{color:var(--accent2); background:#e7edfd;}
+  .teams{
+    display:flex; align-items:center; justify-content:center;
+    gap:4px; flex-wrap:wrap; min-height:26px;
+  }
+  .team{
+    display:inline-flex; align-items:center; gap:5px;
+    font-weight:600; font-size:.8rem; cursor:pointer;
+    border-radius:6px; padding:2px 4px;
+    transition:background .15s;
+  }
+  .team:hover{background:#eef4ff;}
+  .team .flag-img{
+    width:22px; height:15px; object-fit:cover;
+    border-radius:2px; border:1px solid var(--line);
+    box-shadow:0 1px 2px rgba(0,0,0,.12); flex:none;
+  }
+  .team .flag-ph{
+    width:22px; height:15px; border-radius:2px; flex:none;
+    background:#e2e8f0; display:flex; align-items:center;
+    justify-content:center; font-size:.6rem;
+  }
+  .team.tbd{color:var(--muted); font-weight:500; cursor:default; font-size:.72rem;}
+  .team.tbd:hover{background:none;}
+  .vs{font-size:.58rem; font-weight:700; color:var(--muted); letter-spacing:1px; flex:none;}
+  .meta{
+    margin-top:6px; padding-top:5px; border-top:1px dashed var(--line);
+    display:flex; gap:4px; flex-wrap:wrap; align-items:center;
+  }
+  .ch{
+    font-size:.6rem; font-weight:800; letter-spacing:.4px; color:#fff;
+    padding:2px 7px; border-radius:4px; white-space:nowrap;
+  }
+  /* tooltip with the hovered country's full schedule */
+  #tip{
+    display:none; position:fixed; z-index:50;
+    background:#fff; border:1px solid var(--hl-border); border-radius:10px;
+    box-shadow:0 8px 24px rgba(15,23,42,.18);
+    padding:9px 12px; min-width:300px; pointer-events:none;
+  }
+  #tip .tip-head{
+    display:flex; align-items:center; gap:6px;
+    font-size:.78rem; font-weight:800; margin-bottom:6px;
+    padding-bottom:5px; border-bottom:1px solid var(--line);
+  }
+  #tip .tip-row{
+    display:flex; align-items:center; gap:8px;
+    font-size:.72rem; padding:2.5px 0; color:var(--ink);
+  }
+  #tip .tip-date{color:var(--muted); width:88px; flex:none;}
+  #tip .tip-time{font-weight:700; width:42px; flex:none;}
+  #tip .tip-opp{display:flex; align-items:center; gap:5px; flex:1;}
+  #tip img{width:18px; height:12px; object-fit:cover; border-radius:2px; border:1px solid var(--line);}
+  #tip .ch{font-size:.55rem; padding:1px 5px;}
+  /* highlight states */
+  body.filtering .match{opacity:.25; filter:grayscale(.5);}
+  body.filtering .match.lit{
+    opacity:1; filter:none;
+    background:var(--hl); border-color:var(--hl-border);
+    box-shadow:0 3px 10px rgba(240,180,41,.3);
+    transform:translateY(-1px);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
+  <p>Нийт 104 тоглолт · Улаанбаатарын цагаар 🇲🇳 · Монголын телевизүүд</p>
+</header>
+<p class="legend">💡 Улсын далбаа эсвэл нэр дээр хулганаа аваачвал тухайн улсын бүх тоглолтын хуваарь харагдана. Хасагдах шатны тоглолтуудын телевизийн суваг хараахан зарлагдаагүй байна.</p>
+
+<div class="container"><div class="days-grid" id="app"></div></div>
+
+<script>
+const F = {
+  "Mexico":"🇲🇽","South Africa":"🇿🇦","South Korea":"🇰🇷","Czechia":"🇨🇿","Canada":"🇨🇦",
+  "Bosnia and Herzegovina":"🇧🇦","USA":"🇺🇸","Paraguay":"🇵🇾","Qatar":"🇶🇦","Switzerland":"🇨🇭",
+  "Brazil":"🇧🇷","Morocco":"🇲🇦","Haiti":"🇭🇹","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Australia":"🇦🇺","Türkiye":"🇹🇷",
+  "Germany":"🇩🇪","Curaçao":"🇨🇼","Netherlands":"🇳🇱","Japan":"🇯🇵","Ivory Coast":"🇨🇮","Ecuador":"🇪🇨",
+  "Sweden":"🇸🇪","Tunisia":"🇹🇳","Spain":"🇪🇸","Cape Verde":"🇨🇻","Belgium":"🇧🇪","Egypt":"🇪🇬",
+  "Saudi Arabia":"🇸🇦","Uruguay":"🇺🇾","Iran":"🇮🇷","New Zealand":"🇳🇿","France":"🇫🇷","Senegal":"🇸🇳",
+  "Iraq":"🇮🇶","Norway":"🇳🇴","Argentina":"🇦🇷","Algeria":"🇩🇿","Austria":"🇦🇹","Jordan":"🇯🇴",
+  "Portugal":"🇵🇹","DR Congo":"🇨🇩","England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croatia":"🇭🇷","Ghana":"🇬🇭","Panama":"🇵🇦",
+  "Uzbekistan":"🇺🇿","Colombia":"🇨🇴","TBD":"⚽"
+};
+const CODE = {
+  "Mexico":"mx","South Africa":"za","South Korea":"kr","Czechia":"cz","Canada":"ca",
+  "Bosnia and Herzegovina":"ba","USA":"us","Paraguay":"py","Qatar":"qa","Switzerland":"ch",
+  "Brazil":"br","Morocco":"ma","Haiti":"ht","Scotland":"gb-sct","Australia":"au","Türkiye":"tr",
+  "Germany":"de","Curaçao":"cw","Netherlands":"nl","Japan":"jp","Ivory Coast":"ci","Ecuador":"ec",
+  "Sweden":"se","Tunisia":"tn","Spain":"es","Cape Verde":"cv","Belgium":"be","Egypt":"eg",
+  "Saudi Arabia":"sa","Uruguay":"uy","Iran":"ir","New Zealand":"nz","France":"fr","Senegal":"sn",
+  "Iraq":"iq","Norway":"no","Argentina":"ar","Algeria":"dz","Austria":"at","Jordan":"jo",
+  "Portugal":"pt","DR Congo":"cd","England":"gb-eng","Croatia":"hr","Ghana":"gh","Panama":"pa",
+  "Uzbekistan":"uz","Colombia":"co"
+};
+// Mongolian country names
+const MN = {
+  "Mexico":"Мексик","South Africa":"Өмнөд Африк","South Korea":"Өмнөд Солонгос","Czechia":"Чех",
+  "Canada":"Канад","Bosnia and Herzegovina":"Босни-Герцеговин","USA":"АНУ","Paraguay":"Парагвай",
+  "Qatar":"Катар","Switzerland":"Швейцарь","Brazil":"Бразил","Morocco":"Марокко","Haiti":"Гаити",
+  "Scotland":"Шотланд","Australia":"Австрали","Türkiye":"Турк","Germany":"Герман","Curaçao":"Кюрасао",
+  "Netherlands":"Нидерланд","Japan":"Япон","Ivory Coast":"Кот д'Ивуар","Ecuador":"Эквадор",
+  "Sweden":"Швед","Tunisia":"Тунис","Spain":"Испани","Cape Verde":"Кабо-Верде","Belgium":"Бельги",
+  "Egypt":"Египет","Saudi Arabia":"Саудын Араб","Uruguay":"Уругвай","Iran":"Иран",
+  "New Zealand":"Шинэ Зеланд","France":"Франц","Senegal":"Сенегал","Iraq":"Ирак","Norway":"Норвеги",
+  "Argentina":"Аргентин","Algeria":"Алжир","Austria":"Австри","Jordan":"Йордан","Portugal":"Португал",
+  "DR Congo":"Конго","England":"Англи","Croatia":"Хорват","Ghana":"Гана","Panama":"Панам",
+  "Uzbekistan":"Узбекистан","Colombia":"Колумб","TBD":"Тодорхойгүй"
+};
+const WD = {
+  "Monday":"Даваа","Tuesday":"Мягмар","Wednesday":"Лхагва","Thursday":"Пүрэв",
+  "Friday":"Баасан","Saturday":"Бямба","Sunday":"Ням"
+};
+const MO = {"June":"6","July":"7"};
+function dateMN(d, withWeekday){
+  // "Friday, June 12" -> "6-р сарын 12 · Баасан"
+  const [wd, md] = d.split(", ");
+  const [mo, day] = md.split(" ");
+  const base = MO[mo] + "-р сарын " + day;
+  return withWeekday ? base + " · " + WD[wd] : base;
+}
+// TV channel brand colors
+const CH = {
+  "EDU TV":"#16a34a","MNB":"#ea580c","NTV":"#dc2626",
+  "NSPORTS":"#2563eb","SULD TV":"#7c3aed","TBA":"#94a3b8"
+};
+// d=UB date, a/b=teams, t=UB time, ch=channels, g=group or stage
+const M = [
+["Friday, June 12","Mexico","South Africa","03:00",["EDU TV","MNB","NTV","NSPORTS"],"A"],
+["Friday, June 12","South Korea","Czechia","10:00",["SULD TV"],"A"],
+["Saturday, June 13","Canada","Bosnia and Herzegovina","03:00",["EDU TV"],"B"],
+["Saturday, June 13","USA","Paraguay","09:00",["NSPORTS"],"D"],
+["Sunday, June 14","Qatar","Switzerland","03:00",["EDU TV"],"B"],
+["Sunday, June 14","Brazil","Morocco","06:00",["NTV"],"C"],
+["Sunday, June 14","Haiti","Scotland","09:00",["NTV"],"C"],
+["Sunday, June 14","Australia","Türkiye","12:00",["NSPORTS"],"D"],
+["Monday, June 15","Germany","Curaçao","01:00",["EDU TV"],"E"],
+["Monday, June 15","Netherlands","Japan","04:00",["SULD TV"],"F"],
+["Monday, June 15","Ivory Coast","Ecuador","07:00",["EDU TV"],"E"],
+["Monday, June 15","Sweden","Tunisia","10:00",["MNB"],"F"],
+["Tuesday, June 16","Spain","Cape Verde","00:00",["NSPORTS"],"H"],
+["Tuesday, June 16","Belgium","Egypt","03:00",["NTV"],"G"],
+["Tuesday, June 16","Saudi Arabia","Uruguay","06:00",["NSPORTS"],"H"],
+["Tuesday, June 16","Iran","New Zealand","09:00",["NTV"],"G"],
+["Wednesday, June 17","France","Senegal","03:00",["EDU TV"],"I"],
+["Wednesday, June 17","Iraq","Norway","06:00",["EDU TV"],"I"],
+["Wednesday, June 17","Argentina","Algeria","09:00",["MNB"],"J"],
+["Wednesday, June 17","Austria","Jordan","12:00",["NTV"],"J"],
+["Thursday, June 18","Portugal","DR Congo","01:00",["EDU TV"],"K"],
+["Thursday, June 18","England","Croatia","04:00",["NTV"],"L"],
+["Thursday, June 18","Ghana","Panama","07:00",["NTV"],"L"],
+["Thursday, June 18","Uzbekistan","Colombia","10:00",["EDU TV"],"K"],
+["Friday, June 19","Czechia","South Africa","00:00",["MNB"],"A"],
+["Friday, June 19","Switzerland","Bosnia and Herzegovina","03:00",["EDU TV"],"B"],
+["Friday, June 19","Canada","Qatar","06:00",["EDU TV"],"B"],
+["Friday, June 19","Mexico","South Korea","09:00",["SULD TV"],"A"],
+["Saturday, June 20","USA","Australia","03:00",["NSPORTS"],"D"],
+["Saturday, June 20","Scotland","Morocco","06:00",["NTV"],"C"],
+["Saturday, June 20","Brazil","Haiti","08:30",["NTV"],"C"],
+["Saturday, June 20","Türkiye","Paraguay","11:00",["NSPORTS"],"D"],
+["Sunday, June 21","Netherlands","Sweden","01:00",["MNB"],"F"],
+["Sunday, June 21","Germany","Ivory Coast","04:00",["EDU TV"],"E"],
+["Sunday, June 21","Ecuador","Curaçao","08:00",["NTV"],"E"],
+["Sunday, June 21","Tunisia","Japan","12:00",["SULD TV"],"F"],
+["Monday, June 22","Spain","Saudi Arabia","00:00",["NSPORTS"],"H"],
+["Monday, June 22","Belgium","Iran","03:00",["NTV"],"G"],
+["Monday, June 22","Uruguay","Cape Verde","06:00",["NSPORTS"],"H"],
+["Monday, June 22","New Zealand","Egypt","09:00",["NTV"],"G"],
+["Tuesday, June 23","Argentina","Austria","01:00",["MNB"],"J"],
+["Tuesday, June 23","France","Iraq","05:00",["EDU TV"],"I"],
+["Tuesday, June 23","Norway","Senegal","08:00",["EDU TV"],"I"],
+["Tuesday, June 23","Jordan","Algeria","11:00",["MNB"],"J"],
+["Wednesday, June 24","Portugal","Uzbekistan","01:00",["EDU TV"],"K"],
+["Wednesday, June 24","England","Ghana","04:00",["NTV"],"L"],
+["Wednesday, June 24","Panama","Croatia","07:00",["NTV"],"L"],
+["Wednesday, June 24","Colombia","DR Congo","10:00",["EDU TV"],"K"],
+["Thursday, June 25","Switzerland","Canada","03:00",["EDU TV"],"B"],
+["Thursday, June 25","Bosnia and Herzegovina","Qatar","03:00",["NTV"],"B"],
+["Thursday, June 25","Scotland","Brazil","06:00",["NTV"],"C"],
+["Thursday, June 25","Morocco","Haiti","06:00",["NSPORTS"],"C"],
+["Thursday, June 25","Czechia","Mexico","09:00",["MNB"],"A"],
+["Thursday, June 25","South Africa","South Korea","09:00",["SULD TV"],"A"],
+["Friday, June 26","Curaçao","Ivory Coast","04:00",["MNB"],"E"],
+["Friday, June 26","Ecuador","Germany","04:00",["EDU TV"],"E"],
+["Friday, June 26","Japan","Sweden","07:00",["SULD TV"],"F"],
+["Friday, June 26","Tunisia","Netherlands","07:00",["MNB"],"F"],
+["Friday, June 26","Türkiye","USA","10:00",["NSPORTS"],"D"],
+["Friday, June 26","Paraguay","Australia","10:00",["MNB"],"D"],
+["Saturday, June 27","Norway","France","03:00",["EDU TV"],"I"],
+["Saturday, June 27","Senegal","Iraq","03:00",["MNB"],"I"],
+["Saturday, June 27","Uruguay","Spain","08:00",["NSPORTS"],"H"],
+["Saturday, June 27","Cape Verde","Saudi Arabia","08:00",["NTV"],"H"],
+["Saturday, June 27","Egypt","Iran","11:00",["NTV"],"G"],
+["Saturday, June 27","New Zealand","Belgium","11:00",["NSPORTS"],"G"],
+["Sunday, June 28","Panama","England","05:00",["NSPORTS"],"L"],
+["Sunday, June 28","Croatia","Ghana","05:00",["MNB"],"L"],
+["Sunday, June 28","Colombia","Portugal","07:30",["EDU TV"],"K"],
+["Sunday, June 28","DR Congo","Uzbekistan","07:30",["MNB"],"K"],
+["Sunday, June 28","Algeria","Austria","10:00",["MNB"],"J"],
+["Sunday, June 28","Jordan","Argentina","10:00",["SULD TV"],"J"],
+// Хасагдах шат — УБ цагаар, суваг тодорхойгүй
+["Monday, June 29","TBD","TBD","07:00",["TBA"],"R32"],
+["Tuesday, June 30","TBD","TBD","03:00",["TBA"],"R32"],
+["Tuesday, June 30","TBD","TBD","06:30",["TBA"],"R32"],
+["Tuesday, June 30","TBD","TBD","11:00",["TBA"],"R32"],
+["Wednesday, July 1","TBD","TBD","03:00",["TBA"],"R32"],
+["Wednesday, July 1","TBD","TBD","06:00",["TBA"],"R32"],
+["Wednesday, July 1","TBD","TBD","11:00",["TBA"],"R32"],
+["Thursday, July 2","TBD","TBD","01:00",["TBA"],"R32"],
+["Thursday, July 2","TBD","TBD","08:00",["TBA"],"R32"],
+["Thursday, July 2","TBD","TBD","12:00",["TBA"],"R32"],
+["Friday, July 3","TBD","TBD","07:00",["TBA"],"R32"],
+["Friday, July 3","TBD","TBD","08:00",["TBA"],"R32"],
+["Friday, July 3","TBD","TBD","15:00",["TBA"],"R32"],
+["Saturday, July 4","TBD","TBD","05:00",["TBA"],"R32"],
+["Saturday, July 4","TBD","TBD","07:00",["TBA"],"R32"],
+["Saturday, July 4","TBD","TBD","11:30",["TBA"],"R32"],
+["Sunday, July 5","TBD","TBD","03:00",["TBA"],"R16"],
+["Sunday, July 5","TBD","TBD","06:00",["TBA"],"R16"],
+["Monday, July 6","TBD","TBD","05:00",["TBA"],"R16"],
+["Monday, July 6","TBD","TBD","10:00",["TBA"],"R16"],
+["Tuesday, July 7","TBD","TBD","05:00",["TBA"],"R16"],
+["Tuesday, July 7","TBD","TBD","12:00",["TBA"],"R16"],
+["Wednesday, July 8","TBD","TBD","01:00",["TBA"],"R16"],
+["Wednesday, July 8","TBD","TBD","08:00",["TBA"],"R16"],
+["Friday, July 10","TBD","TBD","05:00",["TBA"],"QF"],
+["Saturday, July 11","TBD","TBD","07:00",["TBA"],"QF"],
+["Sunday, July 12","TBD","TBD","06:00",["TBA"],"QF"],
+["Sunday, July 12","TBD","TBD","11:00",["TBA"],"QF"],
+["Wednesday, July 15","TBD","TBD","05:00",["TBA"],"SF"],
+["Thursday, July 16","TBD","TBD","04:00",["TBA"],"SF"],
+["Sunday, July 19","TBD","TBD","06:00",["TBA"],"3RD"],
+["Monday, July 20","TBD","TBD","04:00",["TBA"],"FINAL"]
+];
+
+const stageLabel = g => ({
+  R32:"Шилдэг 32", R16:"Шилдэг 16", QF:"Шөвгийн 8",
+  SF:"Хагас финал", "3RD":"Хүрэл медаль", FINAL:"ФИНАЛ 🏆"
+}[g] || g + " хэсэг");
+const isKO = g => !!{R32:1,R16:1,QF:1,SF:1,"3RD":1,FINAL:1}[g];
+
+const chHTML = list => list.map(c =>
+  `<span class="ch" style="background:${CH[c] || "#94a3b8"}">${c === "TBA" ? "Тодорхойгүй" : c}</span>`).join("");
+
+function teamHTML(n){
+  if (n === "TBD") {
+    return `<div class="team tbd" data-c="TBD">
+      <span class="flag-ph">⚽</span><span class="name">${MN.TBD}</span>
+    </div>`;
+  }
+  return `<div class="team" data-c="${n}">
+    <img class="flag-img" src="https://flagcdn.com/w40/${CODE[n]}.png"
+         srcset="https://flagcdn.com/w80/${CODE[n]}.png 2x"
+         alt="${MN[n]}" loading="lazy"
+         onerror="this.outerHTML='<span class=\'flag-ph\'>${F[n]||"⚽"}</span>'">
+    <span class="name">${MN[n]}</span>
+  </div>`;
+}
+
+// group matches by date
+const byDate = [];
+M.forEach(m => {
+  const last = byDate[byDate.length - 1];
+  if (last && last.date === m[0]) last.matches.push(m);
+  else byDate.push({date: m[0], matches: [m]});
+});
+
+const app = document.getElementById("app");
+byDate.forEach(day => {
+  const ko = isKO(day.matches[0][5]);
+  const el = document.createElement("div");
+  el.className = "day";
+  el.innerHTML = `
+    <div class="day-header">
+      <h2>📅 ${dateMN(day.date, true)}</h2><div class="rule"></div>
+      ${ko ? `<span class="stage-tag">${stageLabel(day.matches[0][5])}</span>` : ""}
+    </div>
+    <div class="grid">
+      ${day.matches.map(([d,a,b,t,ch,g]) => `
+        <div class="match" data-teams="${a}|${b}">
+          <div class="top">
+            <span class="group-badge ${isKO(g) ? "ko" : ""}">${stageLabel(g)}</span>
+            <span class="time">${t}</span>
+          </div>
+          <div class="teams">
+            ${teamHTML(a)}<div class="vs">VS</div>${teamHTML(b)}
+          </div>
+          <div class="meta">📺 ${chHTML(ch)}</div>
+        </div>`).join("")}
+    </div>`;
+  app.appendChild(el);
+});
+
+// hover highlighting + schedule tooltip
+const cards = document.querySelectorAll(".match");
+const tip = document.createElement("div");
+tip.id = "tip";
+document.body.appendChild(tip);
+
+const miniFlag = n => n === "TBD" ? "" :
+  `<img src="https://flagcdn.com/w40/${CODE[n]}.png" alt="">`;
+
+function showTip(el, c){
+  const rows = M.filter(m => m[1] === c || m[2] === c).map(m => {
+    const opp = m[1] === c ? m[2] : m[1];
+    return `<div class="tip-row">
+      <span class="tip-date">${dateMN(m[0], false)}</span>
+      <span class="tip-time">${m[3]}</span>
+      <span class="tip-opp">${miniFlag(opp)} ${MN[opp]}</span>
+      ${chHTML(m[4].slice(0,1))}
+    </div>`;
+  }).join("");
+  tip.innerHTML = `<div class="tip-head">${miniFlag(c)} ${MN[c]} — бүх тоглолт (УБ цагаар)</div>${rows}`;
+  tip.style.display = "block";
+  const r = el.getBoundingClientRect();
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = Math.min(r.left, innerWidth - tw - 10);
+  let y = r.bottom + 8;
+  if (y + th > innerHeight - 10) y = r.top - th - 8;
+  tip.style.left = Math.max(8, x) + "px";
+  tip.style.top  = Math.max(8, y) + "px";
+}
+
+document.querySelectorAll(".team:not(.tbd)").forEach(el => {
+  el.addEventListener("mouseenter", () => {
+    const c = el.dataset.c;
+    document.body.classList.add("filtering");
+    cards.forEach(card => {
+      card.classList.toggle("lit", card.dataset.teams.split("|").includes(c));
+    });
+    showTip(el, c);
+  });
+  el.addEventListener("mouseleave", () => {
+    document.body.classList.remove("filtering");
+    cards.forEach(card => card.classList.remove("lit"));
+    tip.style.display = "none";
+  });
+});
+</script>
+</body>
+</html>
