@@ -214,6 +214,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     background:var(--bg); border-bottom:1px solid var(--line);
     box-shadow:0 2px 8px rgba(15,23,42,.06);
   }
+  .filter-group{display:flex; align-items:center; gap:8px; white-space:nowrap;}
   .filter-bar label{font-size:.8rem; font-weight:700; color:var(--muted);}
   .filter-bar select{
     font-family:inherit; font-size:.85rem; font-weight:600; color:var(--ink);
@@ -267,14 +268,18 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
 
 <div class="container">
   <div class="filter-bar">
-    <label for="countryFilter">🌍 Улс:</label>
-    <select id="countryFilter">
-      <option value="">Бүх улс</option>
-    </select>
-    <label for="dateFilter">📅 Өдөр:</label>
-    <select id="dateFilter">
-      <option value="">Бүх өдөр</option>
-    </select>
+    <span class="filter-group">
+      <label for="countryFilter">🌍 Улс:</label>
+      <select id="countryFilter">
+        <option value="">Бүх улс</option>
+      </select>
+    </span>
+    <span class="filter-group">
+      <label for="dateFilter">📅 Өдөр:</label>
+      <select id="dateFilter">
+        <option value="">Бүх өдөр</option>
+      </select>
+    </span>
     <button class="today-btn" id="todayBtn">📌 Өнөөдөр</button>
     <button class="clear-filter" id="clearFilter">✕ Арилгах</button>
   </div>
