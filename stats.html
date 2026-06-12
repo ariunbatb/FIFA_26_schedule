@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДАШТ 2026 — Статистик</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#15243b; --muted:#64748b;
+    --accent:#0e7a4d; --accent2:#1d4ed8; --line:#e2e8f0;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:40px;
+  }
+  header{
+    background:linear-gradient(135deg,#0e7a4d 0%,#1d4ed8 60%,#b91c1c 100%);
+    color:#fff; text-align:center; padding:24px 16px 18px;
+  }
+  header h1{font-size:1.6rem; letter-spacing:.5px;}
+  header p{opacity:.92; margin-top:4px; font-size:.85rem;}
+  .nav{
+    display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;
+  }
+  .nav a{
+    color:#fff; text-decoration:none; font-weight:700; font-size:.85rem;
+    padding:6px 22px; border-radius:99px; border:1.5px solid rgba(255,255,255,.55);
+    transition:background .15s;
+  }
+  .nav a:hover{background:rgba(255,255,255,.18);}
+  .nav a.active{background:#fff; color:var(--accent2); border-color:#fff;}
+  .container{width:100%; max-width:1100px; margin:0 auto; padding:18px;}
+  .stats-grid{
+    display:grid; gap:14px;
+    grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));
+    align-items:start;
+  }
+  .scard{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px 8px; box-shadow:0 1px 2px rgba(15,23,42,.05);
+  }
+  .scard h2{
+    font-size:.95rem; margin-bottom:8px; display:flex; align-items:center; gap:8px;
+  }
+  table{width:100%; border-collapse:collapse; font-size:.78rem;}
+  th{
+    color:var(--muted); font-size:.62rem; font-weight:700; letter-spacing:.5px;
+    text-transform:uppercase; padding:4px 3px; border-bottom:1px solid var(--line);
+    text-align:center;
+  }
+  th.t{text-align:left;}
+  td{padding:5px 3px; border-bottom:1px solid #f1f5f9; text-align:center;}
+  tr:last-child td{border-bottom:none;}
+  td.pos{color:var(--muted); font-weight:700; width:18px;}
+  td.who{text-align:left;}
+  .tname{display:inline-flex; align-items:center; gap:6px; font-weight:600;}
+  .tname img{
+    width:22px; height:15px; object-fit:cover; border-radius:2px;
+    border:1px solid var(--line); box-shadow:0 1px 2px rgba(0,0,0,.12);
+  }
+  .sub{color:var(--muted); font-weight:500; font-size:.7rem;}
+  td.val{font-weight:900; color:var(--accent);}
+  td.val.bad{color:#b91c1c;}
+  .mins{color:var(--muted); font-size:.68rem;}
+  .empty{color:var(--muted); font-size:.78rem; padding:14px 0; text-align:center;}
+  .note{
+    text-align:center; color:var(--muted); font-size:.72rem; margin-top:14px;
+  }
+  #status{text-align:center; color:var(--muted); padding:40px 0; font-size:.9rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
+  <p>Тэмцээний статистик</p>
+  <nav class="nav">
+    <a href="index.html">Хуваарь</a>
+    <a href="index.html#saved">⭐ Хадгалсан</a>
+    <a href="groups.html">Хэсэг</a>
+    <a href="stats.html" class="active">Статистик</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div id="status">Статистик ачаалж байна…</div>
+  <div class="stats-grid" id="app" style="display:none">
+    <div class="scard">
+      <h2>⚽ Мэргэн бууч</h2>
+      <table>
+        <thead><tr><th></th><th class="t">Тоглогч</th><th title="Минут">Минут</th><th>Гоол</th></tr></thead>
+        <tbody id="scorers"><tr><td colspan="4" class="empty">Ачаалж байна…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="scard">
+      <h2>🔥 Хамгийн их гоол оруулсан баг</h2>
+      <table>
+        <thead><tr><th></th><th class="t">Баг</th><th title="Тоглосон">Т</th><th>Гоол</th></tr></thead>
+        <tbody id="attack"></tbody>
+      </table>
+    </div>
+    <div class="scard">
+      <h2>🧤 Хамгийн их гоол алдсан баг</h2>
+      <table>
+        <thead><tr><th></th><th class="t">Баг</th><th title="Тоглосон">Т</th><th>Алдсан</th></tr></thead>
+        <tbody id="conceded"></tbody>
+      </table>
+    </div>
+    <div class="scard">
+      <h2>🟨🟥 Хөзөр авсан тоглогчид</h2>
+      <table>
+        <thead><tr><th></th><th class="t">Тоглогч</th><th>🟨</th><th>🟥</th></tr></thead>
+        <tbody id="cards"><tr><td colspan="4" class="empty">Ачаалж байна…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <p class="note">Гоолын мэдээлэл worldcup26.ir, хөзрийн мэдээлэл TheSportsDB-ээс ирнэ.</p>
+</div>
+
+<script>
+// Mongolian country names (keyed by API English name)
+const MN = {
+  "Mexico":"Мексик","South Africa":"Өмнөд Африк","South Korea":"Өмнөд Солонгос","Czechia":"Чех",
+  "Czech Republic":"Чех","Canada":"Канад","Bosnia and Herzegovina":"Босни-Герцеговин",
+  "Bosnia & Herzegovina":"Босни-Герцеговин","USA":"АНУ","United States":"АНУ","Paraguay":"Парагвай",
+  "Qatar":"Катар","Switzerland":"Швейцарь","Brazil":"Бразил","Morocco":"Марокко","Haiti":"Гаити",
+  "Scotland":"Шотланд","Australia":"Австрали","Türkiye":"Турк","Turkey":"Турк","Germany":"Герман",
+  "Curaçao":"Кюрасао","Curacao":"Кюрасао","Netherlands":"Нидерланд","Japan":"Япон",
+  "Ivory Coast":"Кот д'Ивуар","Côte d'Ivoire":"Кот д'Ивуар","Ecuador":"Эквадор","Sweden":"Швед",
+  "Tunisia":"Тунис","Spain":"Испани","Cape Verde":"Кабо-Верде","Belgium":"Бельги","Egypt":"Египет",
+  "Saudi Arabia":"Саудын Араб","Uruguay":"Уругвай","Iran":"Иран","New Zealand":"Шинэ Зеланд",
+  "France":"Франц","Senegal":"Сенегал","Iraq":"Ирак","Norway":"Норвеги","Argentina":"Аргентин",
+  "Algeria":"Алжир","Austria":"Австри","Jordan":"Йордан","Portugal":"Португал","DR Congo":"Конго",
+  "England":"Англи","Croatia":"Хорват","Ghana":"Гана","Panama":"Панам","Uzbekistan":"Узбекистан",
+  "Colombia":"Колумб","Democratic Republic of the Congo":"Конго"
+};
+
+const API = "https://worldcup26.ir";
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI";
+
+const N = v => parseInt(v, 10) || 0;
+const mnName = t => MN[t?.name_en] || t?.name_en || "?";
+const flagImg = t => `<img src="${t?.flag || ""}" alt="" loading="lazy">`;
+
+// localStorage cache with TTL — returns cached value if fresh, else fetches and stores
+async function cachedJSON(key, ttlMs, fetcher){
+  try {
+    const c = JSON.parse(localStorage.getItem(key));
+    if (c && Date.now() - c.t < ttlMs) return c.v;
+  } catch (e) {}
+  const v = await fetcher();
+  try { localStorage.setItem(key, JSON.stringify({t: Date.now(), v})); } catch (e) {}
+  return v;
+}
+const MIN = 60000, HOUR = 3600000;
+
+// worldcup26.ir teams are fetched once and shared by all loaders (flags + names)
+const teamsPromise = fetch(API + "/get/teams", { headers: { "Authorization": "Bearer " + TOKEN } })
+  .then(r => { if (!r.ok) throw new Error("teams " + r.status); return r.json(); })
+  .then(t => Array.isArray(t) ? t : t.teams || t.data || []);
+
+// Scorer strings look like {"J. Quiñones 9'","R. Jiménez 67'"} — sometimes with
+// smart quotes (“ ” „) instead of ". Returns [{name, minute}].
+function parseScorers(raw){
+  if (!raw || raw === "null") return [];
+  const out = [];
+  const re = /["“”„']([^"“”„']+?)\s+(\d+(?:\+\d+)?)'?["“”„']/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) out.push({name: m[1].trim(), minute: m[2]});
+  return out;
+}
+
+// Top scorers from worldcup26.ir games. TheSportsDB has no top-scorer endpoint and
+// its timelines miss goals, so this stays the source of truth. The endpoint is slow,
+// so it loads independently of the rest of the page and is cached for 10 minutes.
+async function loadScorers(){
+  const body = document.getElementById("scorers");
+  try {
+    const [teamList, games] = await Promise.all([
+      teamsPromise,
+      cachedJSON("wc_games", 10 * MIN, async () => {
+        const r = await fetch(API + "/get/games", { headers: { "Authorization": "Bearer " + TOKEN } });
+        if (!r.ok) throw new Error("games " + r.status);
+        return r.json();
+      })
+    ]);
+    const gameList = Array.isArray(games) ? games : games.games || games.data || [];
+    const byId = {};
+    teamList.forEach(t => { byId[t.id] = t; });
+
+    const players = {}; // "name|teamId" -> {name, team, goals, minutes[]}
+    gameList.forEach(g => {
+      if (String(g.finished).toUpperCase() !== "TRUE") return;
+      [[g.home_scorers, g.home_team_id], [g.away_scorers, g.away_team_id]].forEach(([raw, teamId]) => {
+        parseScorers(raw).forEach(s => {
+          const p = (players[s.name + "|" + teamId] ||=
+            {name: s.name, team: byId[teamId], goals: 0, minutes: []});
+          p.goals++;
+          p.minutes.push(s.minute + "'");
+        });
+      });
+    });
+    const top = Object.values(players)
+      .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name))
+      .slice(0, 15);
+    body.innerHTML = top.map((p, i) => `
+      <tr>
+        <td class="pos">${i + 1}</td>
+        <td class="who"><span class="tname">${flagImg(p.team)}
+          <span>${p.name} <span class="sub">· ${mnName(p.team)}</span></span>
+        </span></td>
+        <td class="mins">${p.minutes.join(", ")}</td>
+        <td class="val">${p.goals}</td>
+      </tr>`).join("") ||
+      `<tr><td colspan="4" class="empty">Одоогоор гоол ороогүй байна.</td></tr>`;
+  } catch (err) {
+    body.innerHTML = `<tr><td colspan="4" class="empty">Мэдээлэл ачаалагдсангүй.</td></tr>`;
+    console.warn("Scorers load failed:", err);
+  }
+}
+
+async function loadStats(){
+  const status = document.getElementById("status");
+  try {
+    const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
+    const [teamList, groupsRes] = await Promise.all([
+      teamsPromise,
+      fetch(API + "/get/groups", opts)
+    ]);
+    if (!groupsRes.ok) throw new Error("API error " + groupsRes.status);
+    const groups = await groupsRes.json();
+    const groupList = Array.isArray(groups) ? groups : groups.groups || groups.data || [];
+
+    const byId = {};
+    teamList.forEach(t => { byId[t.id] = t; });
+
+    // ---- Team stats from group standings (only teams that have played) ----
+    const teamStats = [];
+    groupList.forEach(g => g.teams.forEach(s => {
+      const mp = N(s.w) + N(s.d) + N(s.l); // API mp field never updates
+      if (mp > 0) teamStats.push({team: byId[s.team_id], mp, gf: N(s.gf), ga: N(s.ga)});
+    }));
+    const row = (s, i, val, bad) => `
+      <tr>
+        <td class="pos">${i + 1}</td>
+        <td class="who"><span class="tname">${flagImg(s.team)}${mnName(s.team)}</span></td>
+        <td>${s.mp}</td>
+        <td class="val${bad ? " bad" : ""}">${val}</td>
+      </tr>`;
+    document.getElementById("attack").innerHTML =
+      teamStats.filter(s => s.gf > 0).sort((a, b) => b.gf - a.gf).slice(0, 10)
+        .map((s, i) => row(s, i, s.gf, false)).join("") ||
+      `<tr><td colspan="4" class="empty">Одоогоор мэдээлэл алга.</td></tr>`;
+    document.getElementById("conceded").innerHTML =
+      teamStats.filter(s => s.ga > 0).sort((a, b) => b.ga - a.ga).slice(0, 10)
+        .map((s, i) => row(s, i, s.ga, true)).join("") ||
+      `<tr><td colspan="4" class="empty">Одоогоор мэдээлэл алга.</td></tr>`;
+
+    status.style.display = "none";
+    document.getElementById("app").style.display = "";
+  } catch (err) {
+    status.textContent = "Статистик ачаалахад алдаа гарлаа. Дахин оролдоно уу.";
+    console.warn("Stats load failed:", err);
+  }
+}
+
+// ===== Yellow/red cards from TheSportsDB match timelines =====
+// (worldcup26.ir has no card data at all, so this is the only source)
+const TSDB = "https://www.thesportsdb.com/api/v1/json/123";
+const WC_LEAGUE = "4429"; // FIFA World Cup
+
+// Timelines get filled in late by TheSportsDB, so cache only for 6 hours.
+const getTimeline = eventId =>
+  cachedJSON("tl2_" + eventId, 6 * HOUR, async () => {
+    const res = await fetch(`${TSDB}/lookuptimeline.php?id=${eventId}`);
+    if (!res.ok) throw new Error("timeline " + res.status);
+    return (await res.json()).timeline || [];
+  });
+
+async function loadCards(){
+  const body = document.getElementById("cards");
+  try {
+    // flags come from worldcup26 teams; don't fail if that call dies
+    const byName = {};
+    try { (await teamsPromise).forEach(t => { byName[t.name_en] = t; }); } catch (e) {}
+
+    const events = await cachedJSON("tsdb_season", 10 * MIN, async () => {
+      const res = await fetch(`${TSDB}/eventsseason.php?id=${WC_LEAGUE}&s=2026`);
+      if (!res.ok) throw new Error("season " + res.status);
+      return (await res.json()).events || [];
+    });
+    const finished = events.filter(e => e.strStatus === "FT" || e.intHomeScore !== null);
+
+    // fetch sequentially to stay under the free-tier rate limit (cache makes repeats free)
+    const carded = {}; // "name|team" -> {name, teamEn, y, r}
+    for (const ev of finished) {
+      let tl = [];
+      try { tl = await getTimeline(ev.idEvent); }
+      catch (e) { console.warn("timeline failed for", ev.idEvent, e); continue; }
+      tl.filter(x => x.strTimeline === "Card").forEach(x => {
+        const p = (carded[x.strPlayer + "|" + x.strTeam] ||=
+          {name: x.strPlayer, teamEn: x.strTeam, y: 0, r: 0});
+        const d = (x.strTimelineDetail || "").toLowerCase();
+        if (d.includes("second yellow") || d.includes("red")) p.r++;
+        else if (d.includes("yellow")) p.y++;
+      });
+    }
+
+    const list = Object.values(carded)
+      .sort((a, b) => b.r - a.r || b.y - a.y || a.name.localeCompare(b.name))
+      .slice(0, 15);
+    body.innerHTML = list.map((p, i) => `
+      <tr>
+        <td class="pos">${i + 1}</td>
+        <td class="who"><span class="tname">${flagImg(byName[p.teamEn])}
+          <span>${p.name} <span class="sub">· ${MN[p.teamEn] || p.teamEn}</span></span>
+        </span></td>
+        <td class="val">${p.y || ""}</td>
+        <td class="val bad">${p.r || ""}</td>
+      </tr>`).join("") ||
+      `<tr><td colspan="4" class="empty">Одоогоор хөзөр аваагүй байна.</td></tr>`;
+  } catch (err) {
+    body.innerHTML = `<tr><td colspan="4" class="empty">Хөзрийн мэдээлэл ачаалагдсангүй.</td></tr>`;
+    console.warn("Cards load failed:", err);
+  }
+}
+loadStats();
+loadScorers();
+loadCards();
+</script>
+</body>
+</html>

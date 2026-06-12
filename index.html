@@ -136,6 +136,19 @@
   #tip .tip-opp{display:flex; align-items:center; gap:5px; flex:1;}
   #tip img{width:18px; height:12px; object-fit:cover; border-radius:2px; border:1px solid var(--line);}
   #tip .ch{font-size:.55rem; padding:1px 5px;}
+  /* save (bookmark) button */
+  .save-btn{
+    border:none; background:none; cursor:pointer; flex:none;
+    font-size:.95rem; line-height:1; padding:0 2px;
+    color:#cbd5e1; transition:color .15s, transform .15s;
+  }
+  .save-btn:hover{color:var(--hl-border); transform:scale(1.2);}
+  .save-btn.on{color:var(--hl-border);}
+  .hidden{display:none !important;}
+  #empty{
+    display:none; text-align:center; color:var(--muted);
+    padding:48px 16px; font-size:.9rem;
+  }
   /* highlight states */
   body.filtering .match{opacity:.25; filter:grayscale(.5);}
   body.filtering .match.lit{
@@ -152,13 +165,18 @@
   <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
   <p>Нийт 104 тоглолт · Улаанбаатарын цагаар 🇲🇳 · Монголын телевизүүд</p>
   <nav class="nav">
-    <a href="index.html" class="active">Хуваарь</a>
+    <a href="index.html" class="active" id="navAll">Хуваарь</a>
+    <a href="#saved" id="navSaved">⭐ Хадгалсан</a>
     <a href="groups.html">Хэсэг</a>
+    <a href="stats.html">Статистик</a>
   </nav>
 </header>
 <p class="legend">💡 Улсын далбаа эсвэл нэр дээр хулганаа аваачвал тухайн улсын бүх тоглолтын хуваарь харагдана. Хасагдах шатны тоглолтуудын телевизийн суваг хараахан зарлагдаагүй байна.</p>
 
-<div class="container"><div class="days-grid" id="app"></div></div>
+<div class="container">
+  <p id="empty">⭐ Хадгалсан тоглолт алга. Тоглолтын баруун дээд буланд байх ☆ товчийг дарж хадгална уу.</p>
+  <div class="days-grid" id="app"></div>
+</div>
 
 <script>
 const F = {
@@ -359,6 +377,13 @@ function teamHTML(n){
   </div>`;
 }
 
+// saved matches (localStorage)
+const SAVE_KEY = "fifa26_saved_matches";
+let savedSet;
+try { savedSet = new Set(JSON.parse(localStorage.getItem(SAVE_KEY) || "[]")); }
+catch (e) { savedSet = new Set(); }
+const persistSaved = () => localStorage.setItem(SAVE_KEY, JSON.stringify([...savedSet]));
+
 // group matches by date
 const byDate = [];
 M.forEach(m => {
@@ -379,10 +404,12 @@ byDate.forEach(day => {
     </div>
     <div class="grid">
       ${day.matches.map(([d,a,b,t,ch,g]) => `
-        <div class="match" data-teams="${a}|${b}">
+        <div class="match" data-teams="${a}|${b}" data-id="${[d,a,b,t].join("|")}">
           <div class="top">
             <span class="group-badge ${isKO(g) ? "ko" : ""}">${stageLabel(g)}</span>
             <span class="time">${t}</span>
+            <button class="save-btn ${savedSet.has([d,a,b,t].join("|")) ? "on" : ""}"
+                    title="Хадгалах">${savedSet.has([d,a,b,t].join("|")) ? "★" : "☆"}</button>
           </div>
           <div class="teams">
             ${teamHTML(a)}<div class="vs">VS</div>${teamHTML(b)}
@@ -392,6 +419,58 @@ byDate.forEach(day => {
     </div>`;
   app.appendChild(el);
 });
+
+// ===== Saved matches: tabs + toggle =====
+const navAll = document.getElementById("navAll");
+const navSaved = document.getElementById("navSaved");
+const emptyMsg = document.getElementById("empty");
+let view = location.hash === "#saved" ? "saved" : "all";
+
+function applyView(){
+  const sv = view === "saved";
+  navAll.classList.toggle("active", !sv);
+  navSaved.classList.toggle("active", sv);
+  document.querySelectorAll(".day").forEach(day => {
+    let any = false;
+    day.querySelectorAll(".match").forEach(m => {
+      const show = !sv || savedSet.has(m.dataset.id);
+      m.classList.toggle("hidden", !show);
+      if (show) any = true;
+    });
+    day.classList.toggle("hidden", !any);
+  });
+  emptyMsg.style.display = (sv && savedSet.size === 0) ? "block" : "none";
+}
+
+navSaved.addEventListener("click", e => {
+  e.preventDefault();
+  view = "saved";
+  history.replaceState(null, "", "#saved");
+  applyView();
+});
+navAll.addEventListener("click", e => {
+  e.preventDefault();
+  view = "all";
+  history.replaceState(null, "", location.pathname);
+  applyView();
+});
+
+document.querySelectorAll(".save-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const id = btn.closest(".match").dataset.id;
+    const on = !savedSet.has(id);
+    if (on) savedSet.add(id); else savedSet.delete(id);
+    persistSaved();
+    btn.classList.toggle("on", on);
+    btn.textContent = on ? "★" : "☆";
+    if (view === "saved") applyView();
+  });
+});
+window.addEventListener("hashchange", () => {
+  view = location.hash === "#saved" ? "saved" : "all";
+  applyView();
+});
+applyView();
 
 // hover highlighting + schedule tooltip
 const cards = document.querySelectorAll(".match");
