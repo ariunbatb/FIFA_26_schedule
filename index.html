@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ДАШТ 2026 — Тоглолтын хуваарь</title>
+<link rel="preconnect" href="https://worldcup26.ir" crossorigin>
+<script>
+// Kick off score API calls immediately so they download while the page renders.
+const API = "https://worldcup26.ir";
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI"; // register once: POST /auth/register
+window.__scoreFetch = (() => {
+  if (TOKEN.startsWith("PASTE")) return null;
+  const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
+  return Promise.all([
+    fetch(API + "/get/teams", opts),
+    fetch(API + "/get/games", opts)
+  ]).catch(err => err); // never an unhandled rejection; loadScores re-checks
+})();
+</script>
 <style>
   :root{
     --bg:#f6f8fb; --card:#ffffff; --ink:#15243b; --muted:#64748b;
@@ -519,55 +533,66 @@ document.querySelectorAll(".team:not(.tbd)").forEach(el => {
 });
 
 // ===== Match results from worldcup26.ir API =====
-const API = "https://worldcup26.ir";
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI"; // register once: POST /auth/register
+// API + TOKEN are declared in <head>, where the requests are already in flight.
+const SCORE_CACHE_KEY = "wc26_scores_v1";
+
+function applyScores(teams, games){
+  // API wraps lists in an object: {teams:[...]}, {games:[...]}
+  const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
+  const gameList = Array.isArray(games) ? games : games.games || games.data || [];
+
+  // map API team id -> fifa_code
+  const idToCode = {};
+  teamList.forEach(t => {
+    idToCode[t.id] = t.fifa_code;
+  });
+  // map our English name -> fifa code, then build "CODE|CODE" -> card lookup
+  const cardByPair = {};
+  cards.forEach(card => {
+    const [a, b] = card.dataset.teams.split("|");
+    if (FIFA[a] && FIFA[b]) {
+      cardByPair[[FIFA[a], FIFA[b]].sort().join("|")] = card;
+    }
+  });
+
+  gameList.forEach(g => {
+    if (String(g.finished).toUpperCase() !== "TRUE") return; // only completed matches ("finished" is a string)
+    const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
+    if (!hc || !ac) return;
+    const card = cardByPair[[hc, ac].sort().join("|")];
+    if (!card) return;
+    // show real score in home-away order matching the card's layout
+    const [cardA] = card.dataset.teams.split("|");
+    const flip = FIFA[cardA] !== hc;
+    const s1 = flip ? g.away_score : g.home_score;
+    const s2 = flip ? g.home_score : g.away_score;
+    const score = card.querySelector(".score");
+    if (score) { // already painted from cache — just refresh the numbers
+      score.textContent = `${s1} : ${s2}`;
+    } else {
+      const vs = card.querySelector(".vs");
+      if (!vs) return;
+      vs.outerHTML = `<span class="score">${s1} : ${s2}</span>`;
+    }
+    card.classList.add("done");
+  });
+}
 
 async function loadScores(){
-  if (TOKEN.startsWith("PASTE")) return; // not configured yet
+  if (!window.__scoreFetch) return; // not configured yet
+  // 1) paint instantly from the last visit's data
   try {
-    const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
-    const [teamsRes, gamesRes] = await Promise.all([
-      fetch(API + "/get/teams", opts),
-      fetch(API + "/get/games", opts)
-    ]);
+    const cached = JSON.parse(localStorage.getItem(SCORE_CACHE_KEY) || "null");
+    if (cached) applyScores(cached.teams, cached.games);
+  } catch (err) { /* bad cache — network result below overwrites it */ }
+  // 2) refresh from the network (requests started in <head>)
+  try {
+    const [teamsRes, gamesRes] = await window.__scoreFetch;
     if (!teamsRes.ok || !gamesRes.ok) throw new Error("API error " + teamsRes.status + "/" + gamesRes.status);
     const teams = await teamsRes.json();
     const games = await gamesRes.json();
-
-    // API wraps lists in an object: {teams:[...]}, {games:[...]}
-    const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
-    const gameList = Array.isArray(games) ? games : games.games || games.data || [];
-
-    // map API team id -> fifa_code
-    const idToCode = {};
-    teamList.forEach(t => {
-      idToCode[t.id] = t.fifa_code;
-    });
-    // map our English name -> fifa code, then build "CODE|CODE" -> card lookup
-    const cardByPair = {};
-    cards.forEach(card => {
-      const [a, b] = card.dataset.teams.split("|");
-      if (FIFA[a] && FIFA[b]) {
-        cardByPair[[FIFA[a], FIFA[b]].sort().join("|")] = card;
-      }
-    });
-
-    gameList.forEach(g => {
-      if (String(g.finished).toUpperCase() !== "TRUE") return; // only completed matches ("finished" is a string)
-      const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
-      if (!hc || !ac) return;
-      const card = cardByPair[[hc, ac].sort().join("|")];
-      if (!card) return;
-      const vs = card.querySelector(".vs");
-      if (!vs) return;
-      // show real score in home-away order matching the card's layout
-      const [cardA] = card.dataset.teams.split("|");
-      const flip = FIFA[cardA] !== hc;
-      const s1 = flip ? g.away_score : g.home_score;
-      const s2 = flip ? g.home_score : g.away_score;
-      vs.outerHTML = `<span class="score">${s1} : ${s2}</span>`;
-      card.classList.add("done");
-    });
+    applyScores(teams, games);
+    try { localStorage.setItem(SCORE_CACHE_KEY, JSON.stringify({ teams, games })); } catch (err) {}
   } catch (err) {
     console.warn("Score load failed:", err); // page still works without scores
   }

@@ -108,14 +108,13 @@
       </table>
     </div>
     <div class="scard">
-      <h2>🟨🟥 Хөзөр авсан тоглогчид</h2>
+      <h2>🟨🟥 Хуудас авсан тоглогчид</h2>
       <table>
         <thead><tr><th></th><th class="t">Тоглогч</th><th>🟨</th><th>🟥</th></tr></thead>
         <tbody id="cards"><tr><td colspan="4" class="empty">Ачаалж байна…</td></tr></tbody>
       </table>
     </div>
   </div>
-  <p class="note">Гоолын мэдээлэл worldcup26.ir, хөзрийн мэдээлэл TheSportsDB-ээс ирнэ.</p>
 </div>
 
 <script>
@@ -319,9 +318,9 @@ async function loadCards(){
         <td class="val">${p.y || ""}</td>
         <td class="val bad">${p.r || ""}</td>
       </tr>`).join("") ||
-      `<tr><td colspan="4" class="empty">Одоогоор хөзөр аваагүй байна.</td></tr>`;
+      `<tr><td colspan="4" class="empty">Одоогоор хуудас аваагүй байна.</td></tr>`;
   } catch (err) {
-    body.innerHTML = `<tr><td colspan="4" class="empty">Хөзрийн мэдээлэл ачаалагдсангүй.</td></tr>`;
+    body.innerHTML = `<tr><td colspan="4" class="empty">Хуудасны мэдээлэл ачаалагдсангүй.</td></tr>`;
     console.warn("Cards load failed:", err);
   }
 }
