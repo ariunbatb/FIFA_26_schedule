@@ -441,9 +441,13 @@ async function loadScores(){
     const teams = await teamsRes.json();
     const games = await gamesRes.json();
 
+    // API wraps lists in an object: {teams:[...]}, {games:[...]}
+    const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
+    const gameList = Array.isArray(games) ? games : games.games || games.data || [];
+
     // map API team id -> fifa_code
     const idToCode = {};
-    (Array.isArray(teams) ? teams : teams.data || []).forEach(t => {
+    teamList.forEach(t => {
       idToCode[t.id] = t.fifa_code;
     });
     // map our English name -> fifa code, then build "CODE|CODE" -> card lookup
@@ -455,8 +459,8 @@ async function loadScores(){
       }
     });
 
-    (Array.isArray(games) ? games : games.data || []).forEach(g => {
-      if (!g.finished) return; // only completed matches
+    gameList.forEach(g => {
+      if (String(g.finished).toUpperCase() !== "TRUE") return; // only completed matches ("finished" is a string)
       const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
       if (!hc || !ac) return;
       const card = cardByPair[[hc, ac].sort().join("|")];
