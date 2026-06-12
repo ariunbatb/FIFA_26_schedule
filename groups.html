@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДАШТ 2026 — Хэсгийн хүснэгт</title>
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#ffffff; --ink:#15243b; --muted:#64748b;
+    --accent:#0e7a4d; --accent2:#1d4ed8; --line:#e2e8f0;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:40px;
+  }
+  header{
+    background:linear-gradient(135deg,#0e7a4d 0%,#1d4ed8 60%,#b91c1c 100%);
+    color:#fff; text-align:center; padding:24px 16px 18px;
+  }
+  header h1{font-size:1.6rem; letter-spacing:.5px;}
+  header p{opacity:.92; margin-top:4px; font-size:.85rem;}
+  .nav{
+    display:flex; justify-content:center; gap:10px; margin-top:14px;
+  }
+  .nav a{
+    color:#fff; text-decoration:none; font-weight:700; font-size:.85rem;
+    padding:6px 22px; border-radius:99px; border:1.5px solid rgba(255,255,255,.55);
+    transition:background .15s;
+  }
+  .nav a:hover{background:rgba(255,255,255,.18);}
+  .nav a.active{background:#fff; color:var(--accent2); border-color:#fff;}
+  .container{width:100%; padding:18px;}
+  .groups-grid{
+    display:grid; gap:14px;
+    grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));
+    align-items:start;
+  }
+  .gcard{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:12px 14px 8px; box-shadow:0 1px 2px rgba(15,23,42,.05);
+  }
+  .gcard h2{
+    font-size:.95rem; margin-bottom:8px; display:flex; align-items:center; gap:8px;
+  }
+  .gcard h2 .badge{
+    font-weight:800; color:var(--accent); background:#e8f5ef;
+    padding:1px 10px; border-radius:99px; font-size:.85rem;
+  }
+  table{width:100%; border-collapse:collapse; font-size:.78rem;}
+  th{
+    color:var(--muted); font-size:.62rem; font-weight:700; letter-spacing:.5px;
+    text-transform:uppercase; padding:4px 3px; border-bottom:1px solid var(--line);
+    text-align:center;
+  }
+  th.t{text-align:left;}
+  td{padding:5px 3px; border-bottom:1px solid #f1f5f9; text-align:center;}
+  tr:last-child td{border-bottom:none;}
+  td.pos{color:var(--muted); font-weight:700; width:18px;}
+  td.team{text-align:left;}
+  .tname{display:inline-flex; align-items:center; gap:6px; font-weight:600;}
+  .tname img{
+    width:22px; height:15px; object-fit:cover; border-radius:2px;
+    border:1px solid var(--line); box-shadow:0 1px 2px rgba(0,0,0,.12);
+  }
+  td.pts{font-weight:900; color:var(--accent);}
+  tr.q td{background:#f3faf6;}
+  tr.q td.pos{color:var(--accent);}
+  .note{
+    text-align:center; color:var(--muted); font-size:.72rem; margin-top:14px;
+  }
+  #status{text-align:center; color:var(--muted); padding:40px 0; font-size:.9rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
+  <p>Хэсгийн хүснэгт · 12 хэсэг, 48 баг</p>
+  <nav class="nav">
+    <a href="index.html">Хуваарь</a>
+    <a href="groups.html" class="active">Хэсэг</a>
+  </nav>
+</header>
+
+<div class="container">
+  <div id="status">Хэсгийн хүснэгтийг ачаалж байна…</div>
+  <div class="groups-grid" id="app"></div>
+  <p class="note">Эхний 2 байр (ногоон) дараагийн шатанд шууд шалгарна.</p>
+</div>
+
+<script>
+// Mongolian country names (keyed by API English name)
+const MN = {
+  "Mexico":"Мексик","South Africa":"Өмнөд Африк","South Korea":"Өмнөд Солонгос","Czechia":"Чех",
+  "Czech Republic":"Чех","Canada":"Канад","Bosnia and Herzegovina":"Босни-Герцеговин",
+  "Bosnia & Herzegovina":"Босни-Герцеговин","USA":"АНУ","United States":"АНУ","Paraguay":"Парагвай",
+  "Qatar":"Катар","Switzerland":"Швейцарь","Brazil":"Бразил","Morocco":"Марокко","Haiti":"Гаити",
+  "Scotland":"Шотланд","Australia":"Австрали","Türkiye":"Турк","Turkey":"Турк","Germany":"Герман",
+  "Curaçao":"Кюрасао","Curacao":"Кюрасао","Netherlands":"Нидерланд","Japan":"Япон",
+  "Ivory Coast":"Кот д'Ивуар","Côte d'Ivoire":"Кот д'Ивуар","Ecuador":"Эквадор","Sweden":"Швед",
+  "Tunisia":"Тунис","Spain":"Испани","Cape Verde":"Кабо-Верде","Belgium":"Бельги","Egypt":"Египет",
+  "Saudi Arabia":"Саудын Араб","Uruguay":"Уругвай","Iran":"Иран","New Zealand":"Шинэ Зеланд",
+  "France":"Франц","Senegal":"Сенегал","Iraq":"Ирак","Norway":"Норвеги","Argentina":"Аргентин",
+  "Algeria":"Алжир","Austria":"Австри","Jordan":"Йордан","Portugal":"Португал","DR Congo":"Конго",
+  "England":"Англи","Croatia":"Хорват","Ghana":"Гана","Panama":"Панам","Uzbekistan":"Узбекистан",
+  "Colombia":"Колумб", "Democratic Republic of the Congo": "Конго"
+};
+
+const API = "https://worldcup26.ir";
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI";
+
+const N = v => parseInt(v, 10) || 0;
+
+async function loadGroups(){
+  const status = document.getElementById("status");
+  try {
+    const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
+    const [teamsRes, groupsRes] = await Promise.all([
+      fetch(API + "/get/teams", opts),
+      fetch(API + "/get/groups", opts)
+    ]);
+    if (!teamsRes.ok || !groupsRes.ok) throw new Error("API error " + teamsRes.status + "/" + groupsRes.status);
+    const teams = await teamsRes.json();
+    const groups = await groupsRes.json();
+    const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
+    const groupList = Array.isArray(groups) ? groups : groups.groups || groups.data || [];
+
+    // API team id -> {name, flag}
+    const byId = {};
+    teamList.forEach(t => { byId[t.id] = t; });
+
+    groupList.sort((a, b) => a.name.localeCompare(b.name));
+    const app = document.getElementById("app");
+    app.innerHTML = groupList.map(g => {
+      const rows = g.teams
+        .map(s => ({...s, info: byId[s.team_id] || {}}))
+        // API-ийн mp талбар шинэчлэгддэггүй тул W+D+L-ээр бодно
+        .map(s => ({...s, mp: N(s.w) + N(s.d) + N(s.l)}))
+        .sort((x, y) =>
+          N(y.pts) - N(x.pts) || N(y.gd) - N(x.gd) || N(y.gf) - N(x.gf) ||
+          (MN[x.info.name_en] || "").localeCompare(MN[y.info.name_en] || ""))
+        .map((s, i) => `
+          <tr class="${i < 2 ? "q" : ""}">
+            <td class="pos">${i + 1}</td>
+            <td class="team"><span class="tname">
+              <img src="${s.info.flag || ""}" alt="" loading="lazy">${MN[s.info.name_en] || s.info.name_en || "?"}
+            </span></td>
+            <td>${s.mp}</td><td>${N(s.w)}</td><td>${N(s.d)}</td><td>${N(s.l)}</td>
+            <td>${N(s.gf)}</td><td>${N(s.ga)}</td>
+            <td>${N(s.gd) > 0 ? "+" : ""}${N(s.gd)}</td>
+            <td class="pts">${N(s.pts)}</td>
+          </tr>`).join("");
+      return `
+        <div class="gcard">
+          <h2><span class="badge">${g.name}</span> хэсэг</h2>
+          <table>
+            <thead><tr>
+              <th></th><th class="t">Баг</th><th title="Тоглосон">Т</th><th title="Хожсон">Х</th>
+              <th title="Тэнцсэн">Тэ</th><th title="Хожигдсон">Хо</th>
+              <th title="Оруулсан гоол">ОГ</th><th title="Алдсан гоол">АГ</th>
+              <th title="Гоолын зөрүү">+/-</th><th>Оноо</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }).join("");
+    status.style.display = "none";
+  } catch (err) {
+    status.textContent = "Хүснэгт ачаалахад алдаа гарлаа. Дахин оролдоно уу.";
+    console.warn("Groups load failed:", err);
+  }
+}
+loadGroups();
+</script>
+</body>
+</html>
