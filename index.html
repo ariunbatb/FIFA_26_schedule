@@ -427,7 +427,7 @@ document.querySelectorAll(".team:not(.tbd)").forEach(el => {
 
 // ===== Match results from worldcup26.ir API =====
 const API = "https://worldcup26.ir";
-const TOKEN = "PASTE_YOUR_TOKEN_HERE"; // register once: POST /auth/register
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI"; // register once: POST /auth/register
 
 async function loadScores(){
   if (TOKEN.startsWith("PASTE")) return; // not configured yet
