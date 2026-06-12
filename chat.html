@@ -216,7 +216,7 @@ function addMsg(text, cls){
   el.className = "msg " + cls;
   const who = document.createElement("div");
   who.className = "who";
-  who.textContent = cls === "user" ? "Та" : "🤖 MongolGPT";
+  who.textContent = cls === "user" ? "Фанат" : "🤖 MongolGPT";
   el.appendChild(who);
   el.appendChild(document.createTextNode(text));
   messages.appendChild(el);
