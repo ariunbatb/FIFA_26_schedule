@@ -91,6 +91,12 @@
   .team.tbd{color:var(--muted); font-weight:500; cursor:default; font-size:.72rem;}
   .team.tbd:hover{background:none;}
   .vs{font-size:.58rem; font-weight:700; color:var(--muted); letter-spacing:1px; flex:none;}
+  .score{
+    font-size:.95rem; font-weight:900; color:#fff;
+    background:var(--accent); padding:1px 9px; border-radius:7px;
+    flex:none; letter-spacing:1px;
+  }
+  .match.done{border-color:#bbe3cf; background:#f3faf6;}
   .meta{
     margin-top:6px; padding-top:5px; border-top:1px dashed var(--line);
     display:flex; gap:4px; flex-wrap:wrap; align-items:center;
@@ -189,6 +195,18 @@ function dateMN(d, withWeekday){
   const base = MO[mo] + "-р сарын " + day;
   return withWeekday ? base + " · " + WD[wd] : base;
 }
+// FIFA codes — used to match API teams to our schedule
+const FIFA = {
+  "Mexico":"MEX","South Africa":"RSA","South Korea":"KOR","Czechia":"CZE","Canada":"CAN",
+  "Bosnia and Herzegovina":"BIH","USA":"USA","Paraguay":"PAR","Qatar":"QAT","Switzerland":"SUI",
+  "Brazil":"BRA","Morocco":"MAR","Haiti":"HAI","Scotland":"SCO","Australia":"AUS","Türkiye":"TUR",
+  "Germany":"GER","Curaçao":"CUW","Netherlands":"NED","Japan":"JPN","Ivory Coast":"CIV",
+  "Ecuador":"ECU","Sweden":"SWE","Tunisia":"TUN","Spain":"ESP","Cape Verde":"CPV","Belgium":"BEL",
+  "Egypt":"EGY","Saudi Arabia":"KSA","Uruguay":"URU","Iran":"IRN","New Zealand":"NZL",
+  "France":"FRA","Senegal":"SEN","Iraq":"IRQ","Norway":"NOR","Argentina":"ARG","Algeria":"ALG",
+  "Austria":"AUT","Jordan":"JOR","Portugal":"POR","DR Congo":"COD","England":"ENG",
+  "Croatia":"CRO","Ghana":"GHA","Panama":"PAN","Uzbekistan":"UZB","Colombia":"COL"
+};
 // TV channel brand colors
 const CH = {
   "EDU TV":"#16a34a","MNB":"#ea580c","NTV":"#dc2626",
@@ -406,6 +424,58 @@ document.querySelectorAll(".team:not(.tbd)").forEach(el => {
     tip.style.display = "none";
   });
 });
+
+// ===== Match results from worldcup26.ir API =====
+const API = "https://worldcup26.ir";
+const TOKEN = "PASTE_YOUR_TOKEN_HERE"; // register once: POST /auth/register
+
+async function loadScores(){
+  if (TOKEN.startsWith("PASTE")) return; // not configured yet
+  try {
+    const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
+    const [teamsRes, gamesRes] = await Promise.all([
+      fetch(API + "/get/teams", opts),
+      fetch(API + "/get/games", opts)
+    ]);
+    if (!teamsRes.ok || !gamesRes.ok) throw new Error("API error " + teamsRes.status + "/" + gamesRes.status);
+    const teams = await teamsRes.json();
+    const games = await gamesRes.json();
+
+    // map API team id -> fifa_code
+    const idToCode = {};
+    (Array.isArray(teams) ? teams : teams.data || []).forEach(t => {
+      idToCode[t.id] = t.fifa_code;
+    });
+    // map our English name -> fifa code, then build "CODE|CODE" -> card lookup
+    const cardByPair = {};
+    cards.forEach(card => {
+      const [a, b] = card.dataset.teams.split("|");
+      if (FIFA[a] && FIFA[b]) {
+        cardByPair[[FIFA[a], FIFA[b]].sort().join("|")] = card;
+      }
+    });
+
+    (Array.isArray(games) ? games : games.data || []).forEach(g => {
+      if (!g.finished) return; // only completed matches
+      const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
+      if (!hc || !ac) return;
+      const card = cardByPair[[hc, ac].sort().join("|")];
+      if (!card) return;
+      const vs = card.querySelector(".vs");
+      if (!vs) return;
+      // show real score in home-away order matching the card's layout
+      const [cardA] = card.dataset.teams.split("|");
+      const flip = FIFA[cardA] !== hc;
+      const s1 = flip ? g.away_score : g.home_score;
+      const s2 = flip ? g.home_score : g.away_score;
+      vs.outerHTML = `<span class="score">${s1} : ${s2}</span>`;
+      card.classList.add("done");
+    });
+  } catch (err) {
+    console.warn("Score load failed:", err); // page still works without scores
+  }
+}
+loadScores();
 </script>
 </body>
 </html>
