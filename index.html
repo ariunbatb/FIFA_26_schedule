@@ -26,53 +26,30 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
 </script>
 <style>
   :root{
-    --bg:#eef2f9; --ink:#15243b; --muted:#5b6b82;
-    --accent:#0e7a4d; --accent2:#1d4ed8;
-    --card:rgba(255,255,255,.55); --card2:rgba(255,255,255,.45);
-    --line:rgba(255,255,255,.65); --line2:rgba(21,36,59,.08);
-    --hl:rgba(255,238,184,.7); --hl-border:#f0b429;
-    --glass-shadow:0 8px 32px rgba(31,38,135,.14);
-    --glass-inset:inset 0 1px 0 rgba(255,255,255,.6);
+    --bg:#eef0eb; --card:#ffffff; --ink:#15241c; --muted:#5f6f66;
+    --accent:#0b6b41; --accent-deep:#084f31; --accent2:#1d4ed8;
+    --gold:#d9a513; --line:#dde3dc;
+    --hl:#e8f5ef; --hl-border:#0b6b41;
+    --shadow:0 1px 2px rgba(21,36,28,.08), 0 12px 28px -18px rgba(21,36,28,.4);
   }
   html.dark{
-    --bg:#0f1623; --ink:#e6edf7; --muted:#9db0c8;
-    --card:rgba(24,35,57,.55); --card2:rgba(255,255,255,.06);
-    --line:rgba(255,255,255,.14); --line2:rgba(255,255,255,.1);
-    --hl:rgba(82,64,16,.6); --hl-border:#d09a1f;
-    --glass-shadow:0 8px 32px rgba(0,0,0,.4);
-    --glass-inset:inset 0 1px 0 rgba(255,255,255,.1);
+    --bg:#0d1411; --card:#16201a; --ink:#e7ede8; --muted:#8fa096;
+    --accent:#15915a; --accent-deep:#0a4d30; --gold:#d9a513; --line:#26342c;
+    --hl:#173a2a; --hl-border:#15915a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 14px 30px -18px rgba(0,0,0,.65);
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
-    color:var(--ink); padding-bottom:40px; min-height:100vh;
-    background:linear-gradient(160deg,#e0f3ea 0%,#dde8fd 45%,#fbe5e7 100%) fixed;
-  }
-  html.dark body{
-    background:linear-gradient(160deg,#0b1b15 0%,#0d1530 50%,#26101a 100%) fixed;
-  }
-  /* floating color blobs behind the glass */
-  body::before, body::after{
-    content:""; position:fixed; z-index:-1; border-radius:50%;
-    pointer-events:none; filter:blur(80px);
-  }
-  body::before{
-    top:-180px; left:-140px; width:560px; height:560px;
-    background:radial-gradient(circle, rgba(14,122,77,.4), transparent 70%);
-  }
-  body::after{
-    bottom:-200px; right:-140px; width:620px; height:620px;
-    background:radial-gradient(circle, rgba(29,78,216,.35), rgba(185,28,28,.18) 55%, transparent 75%);
+    background:var(--bg); color:var(--ink); padding-bottom:40px;
   }
   header{
-    margin:14px 18px 0; border-radius:24px;
-    background:linear-gradient(135deg,rgba(14,122,77,.72) 0%,rgba(29,78,216,.6) 60%,rgba(185,28,28,.6) 100%);
-    backdrop-filter:blur(20px) saturate(160%);
-    -webkit-backdrop-filter:blur(20px) saturate(160%);
-    border:1px solid rgba(255,255,255,.4);
-    box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,.4);
-    color:#fff; text-align:center; padding:24px 60px 18px;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 26px, transparent 26px 52px),
+      radial-gradient(130% 170% at 50% -50%, #128a54 0%, var(--accent) 48%, var(--accent-deep) 100%);
+    color:#fff; text-align:center; padding:30px 60px 20px;
     position:relative;
+    border-bottom:4px solid var(--gold);
   }
   .theme-toggle{
     position:absolute; top:14px; right:16px;
@@ -82,30 +59,30 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     transition:background .15s;
   }
   .theme-toggle:hover{background:rgba(255,255,255,.32);}
-  header h1{font-size:1.6rem; letter-spacing:.5px;}
-  header p{opacity:.92; margin-top:4px; font-size:.85rem;}
+  header h1{font-size:1.75rem; letter-spacing:-.3px; text-shadow:0 2px 10px rgba(0,0,0,.28);}
+  header p{opacity:.85; margin-top:6px; font-size:.85rem; letter-spacing:.2px;}
   .nav{
     display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;
   }
   .nav a{
     color:#fff; text-decoration:none; font-weight:700; font-size:.85rem;
-    padding:6px 22px; border-radius:99px; border:1px solid rgba(255,255,255,.45);
-    background:rgba(255,255,255,.14);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+    padding:6px 22px; border-radius:99px; border:1px solid rgba(255,255,255,.4);
     transition:background .15s; white-space:nowrap;
   }
-  .nav a:hover{background:rgba(255,255,255,.28);}
-  .nav a.active{background:rgba(255,255,255,.92); color:var(--accent2); border-color:rgba(255,255,255,.95);}
+  .nav a:hover{background:rgba(255,255,255,.15);}
+  .nav a.active{background:#fff; color:var(--accent-deep); border-color:#fff; box-shadow:0 2px 10px rgba(0,0,0,.22);}
   @media(max-width:560px){
+    header{padding:26px 14px 16px;}
     .nav{
-      flex-wrap:nowrap; justify-content:flex-start;
+      flex-wrap:nowrap; gap:6px; padding:0 0 4px;
       overflow-x:auto; -webkit-overflow-scrolling:touch;
-      gap:8px; padding:0 12px 4px;
       scrollbar-width:none;
     }
     .nav::-webkit-scrollbar{display:none;}
-    .nav a{flex:none; padding:6px 16px; font-size:.8rem;}
+    .nav a{
+      flex:1 0 auto; min-width:max-content;
+      padding:6px 12px; font-size:.74rem; text-align:center;
+    }
   }
   .legend{
     margin:10px auto; padding:0 16px;
@@ -118,16 +95,16 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   }
   @media(max-width:980px){.days-grid{grid-template-columns:1fr;}}
   .day{
-    background:var(--card); border:1px solid var(--line); border-radius:22px;
-    padding:12px 14px 14px;
-    backdrop-filter:blur(18px) saturate(160%);
-    -webkit-backdrop-filter:blur(18px) saturate(160%);
-    box-shadow:var(--glass-shadow), var(--glass-inset);
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px 16px; box-shadow:var(--shadow);
   }
   .day-header{
     display:flex; align-items:center; gap:8px; margin-bottom:10px;
   }
-  .day-header h2{font-size:.95rem; white-space:nowrap;}
+  .day-header h2{
+    font-size:.95rem; white-space:nowrap; letter-spacing:.2px;
+    padding-left:10px; border-left:4px solid var(--gold);
+  }
   .day-header .rule{flex:1; height:1px; background:var(--line);}
   .stage-tag{
     font-size:.62rem; font-weight:700; letter-spacing:.5px;
@@ -139,27 +116,34 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     grid-template-columns:repeat(auto-fill, minmax(225px, 1fr));
   }
   .match{
-    background:var(--card2); border:1px solid var(--line2); border-radius:16px;
-    padding:8px 10px; transition:all .18s ease;
-    box-shadow:0 2px 8px rgba(31,38,135,.06);
+    background:#f7f9f6; border:1px solid var(--line); border-radius:12px;
+    padding:9px 11px;
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s, opacity .18s;
   }
-  .match:hover{transform:translateY(-1px); box-shadow:0 6px 16px rgba(31,38,135,.12);}
+  html.dark .match{background:#121b15;}
+  .match:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 20px -12px rgba(21,36,28,.45);
+  }
   .match .top{
     display:flex; justify-content:space-between; align-items:center;
     font-size:.64rem; color:var(--muted); margin-bottom:6px;
   }
   .match .top .time{
-    font-size:.88rem; font-weight:800; color:var(--ink);
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:.82rem; font-weight:700; color:var(--ink);
     background:var(--card); border:1px solid var(--line);
-    padding:1px 9px; border-radius:7px;
+    padding:1px 8px; border-radius:8px;
+    font-variant-numeric:tabular-nums;
   }
+  .match .top .time::before{content:"🕐"; font-size:.72rem; line-height:1;}
   .match .group-badge{
     font-weight:700; color:var(--accent);
-    background:rgba(16,185,129,.18); padding:1px 7px; border-radius:99px;
+    background:#e8f5ef; padding:1px 7px; border-radius:99px;
   }
-  .match .group-badge.ko{color:var(--accent2); background:rgba(29,78,216,.14);}
-  html.dark .match .group-badge{color:#4ade80; background:rgba(74,222,128,.14);}
-  html.dark .match .group-badge.ko{color:#93b4ff; background:rgba(147,180,255,.14);}
+  .match .group-badge.ko{color:var(--accent2); background:#e7edfd;}
+  html.dark .match .group-badge{color:#4ade80; background:#173a2a;}
+  html.dark .match .group-badge.ko{color:#93b4ff; background:#1d2b55;}
   .teams{
     display:flex; align-items:center; justify-content:center;
     gap:4px; flex-wrap:wrap; min-height:26px;
@@ -170,8 +154,8 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     border-radius:6px; padding:2px 4px;
     transition:background .15s;
   }
-  .team:hover{background:rgba(255,255,255,.6);}
-  html.dark .team:hover{background:rgba(255,255,255,.1);}
+  .team:hover{background:#e3efe7;}
+  html.dark .team:hover{background:#203127;}
   .team .flag-img{
     width:22px; height:15px; object-fit:cover;
     border-radius:2px; border:1px solid var(--line);
@@ -187,11 +171,12 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   .vs{font-size:.58rem; font-weight:700; color:var(--muted); letter-spacing:1px; flex:none;}
   .score{
     font-size:.95rem; font-weight:900; color:#fff;
-    background:#64748b; padding:1px 9px; border-radius:7px;
-    flex:none; letter-spacing:1px;
+    background:#334155; padding:1px 10px; border-radius:8px;
+    flex:none; letter-spacing:1px; font-variant-numeric:tabular-nums;
+    box-shadow:0 2px 6px -2px rgba(15,23,42,.5);
   }
-  .match.done{border-color:rgba(100,116,139,.3); background:rgba(148,163,184,.22);}
-  html.dark .match.done{border-color:rgba(255,255,255,.16); background:rgba(255,255,255,.1);}
+  .match.done{border-color:#d3dae3; background:#eceff4;}
+  html.dark .match.done{border-color:#3c4a61; background:#212b3c;}
   .match.live{border-color:#f87171;}
   .live-badge{
     display:inline-flex; align-items:center; gap:4px;
@@ -216,10 +201,8 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   /* tooltip with the hovered country's full schedule */
   #tip{
     display:none; position:fixed; z-index:50;
-    background:var(--card); border:1px solid var(--hl-border); border-radius:16px;
-    backdrop-filter:blur(24px) saturate(180%);
-    -webkit-backdrop-filter:blur(24px) saturate(180%);
-    box-shadow:var(--glass-shadow), var(--glass-inset);
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 8px 24px rgba(16,24,40,.14);
     padding:9px 12px; min-width:300px; pointer-events:none;
   }
   #tip .tip-head{
@@ -243,45 +226,48 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     color:#cbd5e1; transition:color .15s, transform .15s;
   }
   html.dark .save-btn{color:#475569;}
-  .save-btn:hover{color:var(--hl-border); transform:scale(1.2);}
-  .save-btn.on{color:var(--hl-border);}
+  .save-btn:hover{color:var(--gold); transform:scale(1.2);}
+  .save-btn.on{color:var(--gold);}
   .hidden{display:none !important;}
   /* country + date filters (sticky) */
   .filter-bar{
-    position:sticky; top:10px; z-index:40;
+    position:sticky; top:0; z-index:40;
     display:flex; justify-content:center; align-items:center; gap:8px;
-    margin:0 0 14px; padding:10px 18px; flex-wrap:wrap;
-    background:var(--card); border:1px solid var(--line); border-radius:20px;
-    backdrop-filter:blur(20px) saturate(170%);
-    -webkit-backdrop-filter:blur(20px) saturate(170%);
-    box-shadow:var(--glass-shadow), var(--glass-inset);
+    margin:0 -18px 14px; padding:10px 18px; flex-wrap:wrap;
+    background:var(--card); border-bottom:1px solid var(--line);
+    box-shadow:0 8px 18px -14px rgba(21,36,28,.5);
   }
   .filter-group{display:flex; align-items:center; gap:8px; white-space:nowrap;}
   .filter-bar label{font-size:.8rem; font-weight:700; color:var(--muted);}
   .filter-bar select{
     font-family:inherit; font-size:.85rem; font-weight:600; color:var(--ink);
-    background:var(--card2); border:1px solid var(--line); border-radius:99px;
+    background:var(--card); border:1px solid var(--line); border-radius:8px;
     padding:6px 14px; cursor:pointer; outline:none; min-width:160px;
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
     transition:border-color .15s;
   }
-  .filter-bar select:hover, .filter-bar select:focus{border-color:var(--accent2);}
-  .filter-bar select option{background:var(--bg); color:var(--ink);}
+  .filter-bar select:hover{border-color:var(--accent);}
+  .filter-bar select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(11,107,65,.15);}
   .today-btn{
     border:1px solid var(--accent); cursor:pointer; font-size:.8rem; font-weight:700;
-    color:var(--accent); background:var(--card2); border-radius:99px; padding:6px 14px;
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    color:var(--accent); background:var(--card); border-radius:8px; padding:6px 14px;
     transition:all .15s;
   }
-  .today-btn:hover{background:rgba(16,185,129,.18);}
+  .today-btn:hover{background:#e8f5ef;}
   html.dark .today-btn{color:#4ade80; border-color:#4ade80;}
-  html.dark .today-btn:hover{background:rgba(74,222,128,.14);}
+  html.dark .today-btn:hover{background:#173a2a;}
   .today-btn.active, html.dark .today-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
   .clear-filter{
     display:none; border:none; cursor:pointer; font-size:.75rem; font-weight:700;
-    color:#fff; background:var(--accent2); border-radius:99px; padding:6px 14px;
+    color:#fff; background:var(--accent2); border-radius:8px; padding:6px 14px;
   }
   .clear-filter.show{display:inline-block;}
+  @media(max-width:560px){
+    .filter-bar{padding:12px 18px; gap:10px;}
+    .filter-group{width:100%;}
+    .filter-bar select{flex:1; width:100%; min-width:0;}
+    .today-btn, .clear-filter{width:100%;}
+    .clear-filter.show{display:block;}
+  }
   #empty{
     display:none; text-align:center; color:var(--muted);
     padding:48px 16px; font-size:.9rem;
@@ -291,7 +277,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   body.filtering .match.lit{
     opacity:1; filter:none;
     background:var(--hl); border-color:var(--hl-border);
-    box-shadow:0 3px 10px rgba(240,180,41,.3);
+    box-shadow:0 3px 10px rgba(11,107,65,.22);
     transform:translateY(-1px);
   }
 </style>
@@ -301,7 +287,6 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
 <header>
   <button class="theme-toggle" id="themeToggle" title="Өдөр/шөнийн горим">🌙</button>
   <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
-  <p>Нийт 104 тоглолт · Улаанбаатарын цагаар 🇲🇳 · Монголын телевизүүд</p>
   <nav class="nav">
     <a href="index.html" class="active" id="navAll">Хуваарь</a>
     <a href="#saved" id="navSaved">⭐ Хадгалсан</a>
