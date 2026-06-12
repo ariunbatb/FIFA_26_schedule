@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДАШТ 2026 — Чатбот</title>
+<script>
+// Apply saved theme before first paint to avoid a light-mode flash.
+if (localStorage.getItem("fifa26_theme") === "dark" ||
+    (!localStorage.getItem("fifa26_theme") && matchMedia("(prefers-color-scheme: dark)").matches))
+  document.documentElement.classList.add("dark");
+// Compact mode when shown inside the floating chat popup (index/groups/stats pages).
+if (new URLSearchParams(location.search).has("embed"))
+  document.documentElement.classList.add("embed");
+</script>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1a2332; --muted:#6b7686;
+    --accent:#0e7a4d; --accent2:#1d4ed8; --line:#e6e9ef;
+    --bubble-user:#0e7a4d; --bubble-bot:#eef2ee;
+    --shadow:0 1px 3px rgba(16,24,40,.06);
+  }
+  html.dark{
+    --bg:#10161f; --card:#1a2230; --ink:#e6ebf2; --muted:#94a3b8;
+    --line:#2a3547; --bubble-bot:#232f42;
+    --shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html, body{height:100%;}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column;
+  }
+  header{
+    background:var(--accent);
+    color:#fff; text-align:center; padding:24px 60px 18px;
+    position:relative; flex:none;
+  }
+  .theme-toggle{
+    position:absolute; top:14px; right:16px;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.55);
+    color:#fff; font-size:1.05rem; line-height:1; cursor:pointer;
+    transition:background .15s;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,.32);}
+  header h1{font-size:1.6rem; letter-spacing:.5px;}
+  header p{opacity:.92; margin-top:4px; font-size:.85rem;}
+  .nav{
+    display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;
+  }
+  .nav a{
+    color:#fff; text-decoration:none; font-weight:700; font-size:.85rem;
+    padding:6px 22px; border-radius:99px; border:1px solid rgba(255,255,255,.4);
+    transition:background .15s; white-space:nowrap;
+  }
+  .nav a:hover{background:rgba(255,255,255,.15);}
+  .nav a.active{background:#fff; color:var(--accent); border-color:#fff;}
+  @media(max-width:560px){
+    header{padding:26px 14px 16px;}
+    .nav{
+      flex-wrap:nowrap; gap:6px; padding:0 0 4px;
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    .nav::-webkit-scrollbar{display:none;}
+    .nav a{
+      flex:1 0 auto; min-width:max-content;
+      padding:6px 12px; font-size:.74rem; text-align:center;
+    }
+  }
+  .chat-wrap{
+    flex:1; display:flex; flex-direction:column;
+    width:100%; max-width:760px; margin:0 auto; padding:14px 14px 12px;
+    min-height:0;
+  }
+  #messages{
+    flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px;
+    padding:4px 2px 10px;
+  }
+  .msg{
+    max-width:82%; padding:9px 13px; border-radius:14px;
+    font-size:.88rem; line-height:1.5; white-space:pre-wrap; word-break:break-word;
+    box-shadow:var(--shadow);
+  }
+  .msg.user{
+    align-self:flex-end; background:var(--bubble-user); color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .msg.bot{
+    align-self:flex-start; background:var(--bubble-bot); color:var(--ink);
+    border-bottom-left-radius:4px;
+  }
+  .msg.bot.error{color:#dc2626;}
+  html.dark .msg.bot.error{color:#f87171;}
+  .who{
+    font-size:.62rem; font-weight:700; letter-spacing:.4px;
+    color:var(--muted); margin-bottom:2px;
+  }
+  .msg.user .who{color:rgba(255,255,255,.75);}
+  /* typing indicator */
+  .typing{display:inline-flex; gap:4px; align-items:center; padding:4px 0;}
+  .typing .dot{
+    width:7px; height:7px; border-radius:50%; background:var(--muted);
+    animation:bounce 1.2s ease-in-out infinite;
+  }
+  .typing .dot:nth-child(2){animation-delay:.15s;}
+  .typing .dot:nth-child(3){animation-delay:.3s;}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0); opacity:.4;} 30%{transform:translateY(-5px); opacity:1;}}
+  /* suggested questions */
+  .suggest{
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    padding:6px 0 10px; flex:none;
+  }
+  .suggest button{
+    font-family:inherit; font-size:.74rem; font-weight:600; color:var(--accent);
+    background:var(--card); border:1px solid var(--line); border-radius:99px;
+    padding:6px 13px; cursor:pointer; transition:all .15s;
+  }
+  .suggest button:hover{border-color:var(--accent); background:#e8f5ef;}
+  html.dark .suggest button{color:#4ade80;}
+  html.dark .suggest button:hover{background:#173a2a;}
+  /* input row */
+  .input-row{
+    flex:none; display:flex; gap:8px; align-items:flex-end;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:8px; box-shadow:var(--shadow);
+  }
+  #input{
+    flex:1; border:none; outline:none; resize:none; background:none;
+    font-family:inherit; font-size:.9rem; color:var(--ink);
+    line-height:1.45; max-height:120px; padding:6px 6px;
+  }
+  #input::placeholder{color:var(--muted);}
+  #send{
+    flex:none; border:none; cursor:pointer;
+    width:40px; height:40px; border-radius:11px;
+    background:var(--accent); color:#fff; font-size:1.05rem;
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .15s, transform .1s;
+  }
+  #send:hover{transform:scale(1.06);}
+  #send:disabled{opacity:.45; cursor:default; transform:none;}
+  /* embed mode: the popup supplies its own title bar, so hide the page header */
+  html.embed header{display:none;}
+  html.embed .chat-wrap{padding:10px 10px 10px;}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="theme-toggle" id="themeToggle" title="Өдөр/шөнийн горим">🌙</button>
+  <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
+  <p>Чатбот · ДАШТ-ийн талаар асууж лавлана уу</p>
+  <nav class="nav">
+    <a href="index.html">Хуваарь</a>
+    <a href="index.html#saved">⭐ Хадгалсан</a>
+    <a href="groups.html">Хэсэг</a>
+    <a href="stats.html">Статистик</a>
+    <a href="chat.html" class="active">💬 Чатбот</a>
+  </nav>
+</header>
+
+<div class="chat-wrap">
+  <div id="messages">
+    <div class="msg bot">
+      <div class="who">🤖 MongolGPT</div>Сайн байна уу! Би 2026 оны хөлбөмбөгийн ДАШТ-ийн талаарх мэдээлэл, түүхэн баримтаар туслах чатбот байна. Та юу мэдэхийг хүсэж байна вэ?
+    </div>
+  </div>
+  <div class="suggest" id="suggest">
+    <button>Өнөөдөр ямар тоглолт байгаа вэ?</button>
+    <button>Финал хэзээ болох вэ?</button>
+    <button>Монголд хэдэн цагт үзэх вэ?</button>
+  </div>
+  <div class="input-row">
+    <textarea id="input" rows="1" placeholder="Асуултаа бичнэ үү…"></textarea>
+    <button id="send" title="Илгээх">➤</button>
+  </div>
+</div>
+
+<script>
+// ===== Dark mode toggle =====
+const themeBtn = document.getElementById("themeToggle");
+const syncThemeIcon = () =>
+  themeBtn.textContent = document.documentElement.classList.contains("dark") ? "☀️" : "🌙";
+syncThemeIcon();
+themeBtn.addEventListener("click", () => {
+  const dark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("fifa26_theme", dark ? "dark" : "light");
+  syncThemeIcon();
+});
+
+// ===== Chatbot (MongolGPT flow API) =====
+const CHAT_API = "https://usion-api.mongolai.mn/flows/6a2bb3d54b5612bda334ab4f/execute_v2";
+// one uuid per visitor so the bot keeps conversation context across messages
+const UUID_KEY = "fifa26_chat_uuid";
+let uuid = localStorage.getItem(UUID_KEY);
+if (!uuid) {
+  uuid = crypto.randomUUID ? crypto.randomUUID() :
+    "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === "x" ? r : (r & 3 | 8)).toString(16);
+    });
+  localStorage.setItem(UUID_KEY, uuid);
+}
+
+const messages = document.getElementById("messages");
+const input = document.getElementById("input");
+const sendBtn = document.getElementById("send");
+const suggest = document.getElementById("suggest");
+let busy = false;
+
+function addMsg(text, cls){
+  const el = document.createElement("div");
+  el.className = "msg " + cls;
+  const who = document.createElement("div");
+  who.className = "who";
+  who.textContent = cls === "user" ? "Та" : "🤖 MongolGPT";
+  el.appendChild(who);
+  el.appendChild(document.createTextNode(text));
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+  return el;
+}
+
+function addTyping(){
+  const el = document.createElement("div");
+  el.className = "msg bot";
+  el.innerHTML = '<div class="who">🤖 MongolGPT</div><span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>';
+  messages.appendChild(el);
+  messages.scrollTop = messages.scrollHeight;
+  return el;
+}
+
+async function send(text){
+  text = (text || "").trim();
+  if (!text || busy) return;
+  busy = true;
+  sendBtn.disabled = true;
+  suggest.style.display = "none";
+  addMsg(text, "user");
+  input.value = "";
+  input.style.height = "auto";
+  const typing = addTyping();
+  try {
+    const res = await fetch(CHAT_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uuid, message: text })
+    });
+    if (!res.ok) throw new Error("API error " + res.status);
+    const data = await res.json();
+    const replies = (data.chatOutputs || []).filter(Boolean);
+    typing.remove();
+    if (replies.length) replies.forEach(r => addMsg(r, "bot"));
+    else addMsg("Уучлаарай, хариулт олдсонгүй. Дахин оролдоно уу.", "bot error");
+  } catch (err) {
+    typing.remove();
+    addMsg("Холболтод алдаа гарлаа. Дахин оролдоно уу.", "bot error");
+    console.warn("Chat failed:", err);
+  }
+  busy = false;
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+sendBtn.addEventListener("click", () => send(input.value));
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    send(input.value);
+  }
+});
+// auto-grow the textarea up to its CSS max-height
+input.addEventListener("input", () => {
+  input.style.height = "auto";
+  input.style.height = input.scrollHeight + "px";
+});
+suggest.addEventListener("click", e => {
+  if (e.target.tagName === "BUTTON") send(e.target.textContent);
+});
+input.focus();
+</script>
+<script data-goatcounter="https://fifa26schedule.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

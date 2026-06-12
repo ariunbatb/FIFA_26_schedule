@@ -118,6 +118,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     <a href="index.html#saved">⭐ Хадгалсан</a>
     <a href="groups.html">Хэсэг</a>
     <a href="stats.html" class="active">Статистик</a>
+<!--    <a href="chat.html">💬 Чатбот</a>-->
   </nav>
 </header>
 
@@ -181,7 +182,8 @@ const MN = {
   "France":"Франц","Senegal":"Сенегал","Iraq":"Ирак","Norway":"Норвеги","Argentina":"Аргентин",
   "Algeria":"Алжир","Austria":"Австри","Jordan":"Йордан","Portugal":"Португал","DR Congo":"Конго",
   "England":"Англи","Croatia":"Хорват","Ghana":"Гана","Panama":"Панам","Uzbekistan":"Узбекистан",
-  "Colombia":"Колумб","Democratic Republic of the Congo":"Конго"
+  "Colombia":"Колумб","Democratic Republic of the Congo":"Конго",
+  "Bosnia-Herzegovina":"Босни-Герцеговин","Congo DR":"Конго"
 };
 
 const API = "https://worldcup26.ir";
@@ -313,47 +315,37 @@ async function loadStats(){
   }
 }
 
-// ===== Yellow/red cards from TheSportsDB match timelines =====
-// (worldcup26.ir has no card data at all, so this is the only source)
-const TSDB = "https://www.thesportsdb.com/api/v1/json/123";
-const WC_LEAGUE = "4429"; // FIFA World Cup
-
-// Timelines get filled in late by TheSportsDB, so cache only for 6 hours.
-const getTimeline = eventId =>
-  cachedJSON("tl2_" + eventId, 6 * HOUR, async () => {
-    const res = await fetch(`${TSDB}/lookuptimeline.php?id=${eventId}`);
-    if (!res.ok) throw new Error("timeline " + res.status);
-    return (await res.json()).timeline || [];
-  });
+// ===== Yellow/red cards from ESPN's public scoreboard =====
+// (worldcup26.ir has no card data; TheSportsDB timelines proved incomplete —
+//  ESPN returns the whole tournament with cards inline in one CORS-open call)
+const ESPN_SB = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200";
 
 async function loadCards(){
   const body = document.getElementById("cards");
   try {
-    // flags come from worldcup26 teams; don't fail if that call dies
-    const byName = {};
-    try { (await teamsPromise).forEach(t => { byName[t.name_en] = t; }); } catch (e) {}
-
-    const events = await cachedJSON("tsdb_season", 10 * MIN, async () => {
-      const res = await fetch(`${TSDB}/eventsseason.php?id=${WC_LEAGUE}&s=2026`);
-      if (!res.ok) throw new Error("season " + res.status);
-      return (await res.json()).events || [];
+    const data = await cachedJSON("espn_sb", 10 * MIN, async () => {
+      const res = await fetch(ESPN_SB);
+      if (!res.ok) throw new Error("espn " + res.status);
+      return res.json();
     });
-    const finished = events.filter(e => e.strStatus === "FT" || e.intHomeScore !== null);
 
-    // fetch sequentially to stay under the free-tier rate limit (cache makes repeats free)
-    const carded = {}; // "name|team" -> {name, teamEn, y, r}
-    for (const ev of finished) {
-      let tl = [];
-      try { tl = await getTimeline(ev.idEvent); }
-      catch (e) { console.warn("timeline failed for", ev.idEvent, e); continue; }
-      tl.filter(x => x.strTimeline === "Card").forEach(x => {
-        const p = (carded[x.strPlayer + "|" + x.strTeam] ||=
-          {name: x.strPlayer, teamEn: x.strTeam, y: 0, r: 0});
-        const d = (x.strTimelineDetail || "").toLowerCase();
-        if (d.includes("second yellow") || d.includes("red")) p.r++;
-        else if (d.includes("yellow")) p.y++;
+    const carded = {}; // "name|teamId" -> {name, teamEn, flag, y, r}
+    (data.events || []).forEach(ev => {
+      const comp = ev.competitions && ev.competitions[0];
+      if (!comp || ev.status?.type?.state === "pre") return;
+      const teams = {};
+      (comp.competitors || []).forEach(c => { teams[c.team.id] = c.team; });
+      (comp.details || []).forEach(x => {
+        if (!x.yellowCard && !x.redCard) return;
+        const name = x.athletesInvolved?.[0]?.displayName;
+        if (!name) return;
+        const t = teams[x.team?.id] || {};
+        const p = (carded[name + "|" + x.team?.id] ||=
+          {name, teamEn: t.displayName || "?", flag: t.logo || "", y: 0, r: 0});
+        if (x.redCard) p.r++;
+        else p.y++;
       });
-    }
+    });
 
     const list = Object.values(carded)
       .sort((a, b) => b.r - a.r || b.y - a.y || a.name.localeCompare(b.name))
@@ -361,7 +353,7 @@ async function loadCards(){
     body.innerHTML = list.map((p, i) => `
       <tr>
         <td class="pos">${i + 1}</td>
-        <td class="who"><span class="tname">${flagImg(byName[p.teamEn])}
+        <td class="who"><span class="tname"><img src="${p.flag}" alt="" loading="lazy">
           <span>${p.name} <span class="sub">· ${MN[p.teamEn] || p.teamEn}</span></span>
         </span></td>
         <td class="val">${p.y || ""}</td>
@@ -376,6 +368,64 @@ async function loadCards(){
 loadStats();
 loadScorers();
 loadCards();
+</script>
+
+<!-- ===== Floating AI chatbot button + popup ===== -->
+<style>
+  #chatFab{
+    position:fixed; right:16px; bottom:16px; z-index:1200;
+    display:flex; align-items:center; gap:9px;
+    padding:9px 18px 9px 10px; border:none; border-radius:99px; cursor:pointer;
+    font-family:inherit; font-size:.92rem; font-weight:700; color:#fff;
+    background:var(--accent,#0b6b41); box-shadow:0 8px 24px rgba(0,0,0,.35);
+    transition:transform .15s;
+  }
+  #chatFab:hover{transform:scale(1.05);}
+  #chatFab .ico{
+    width:28px; height:28px; border-radius:8px; background:#e23b2e;
+    display:flex; align-items:center; justify-content:center; font-size:1rem;
+  }
+  #chatPanel{
+    position:fixed; right:16px; bottom:74px; z-index:1200;
+    width:min(380px, calc(100vw - 32px)); height:min(560px, calc(100dvh - 110px));
+    display:none; flex-direction:column; overflow:hidden;
+    background:var(--card,#fff); border:1px solid var(--line,#e6e9ef);
+    border-radius:16px; box-shadow:0 16px 48px rgba(0,0,0,.35);
+  }
+  #chatPanel.open{display:flex;}
+  #chatPanel .bar{
+    flex:none; display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px; background:var(--accent,#0b6b41); color:#fff;
+    font-weight:700; font-size:.9rem;
+  }
+  #chatPanel .bar button{
+    border:none; background:rgba(255,255,255,.18); color:#fff; cursor:pointer;
+    width:26px; height:26px; border-radius:50%; font-size:.85rem; line-height:1;
+  }
+  #chatPanel iframe{flex:1; width:100%; border:none; background:var(--bg,#f6f7f9);}
+</style>
+<button id="chatFab" title="AI Чатбот"><span class="ico">🤖</span>AI Чатбот</button>
+<div id="chatPanel" role="dialog" aria-label="AI Чатбот">
+  <div class="bar"><span>🤖 MongolGPT — ДАШТ 2026</span><button id="chatClose" title="Хаах">✕</button></div>
+  <iframe id="chatFrame" title="Чатбот"></iframe>
+</div>
+<script>
+(() => {
+  const fab = document.getElementById("chatFab"),
+        panel = document.getElementById("chatPanel"),
+        frame = document.getElementById("chatFrame");
+  fab.addEventListener("click", () => {
+    if (!frame.src) frame.src = "chat.html?embed=1"; // load on first open only
+    panel.classList.toggle("open");
+    // keep the popup's theme in sync if the user toggled dark mode after it loaded
+    try {
+      frame.contentDocument.documentElement.classList
+        .toggle("dark", document.documentElement.classList.contains("dark"));
+    } catch (err) {}
+  });
+  document.getElementById("chatClose").addEventListener("click", () =>
+    panel.classList.remove("open"));
+})();
 </script>
 </body>
 </html>
