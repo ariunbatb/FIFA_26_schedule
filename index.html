@@ -792,7 +792,7 @@ function updateLive(){
     if (live && !badge) {
       const span = document.createElement("span");
       span.className = "live-badge";
-      span.innerHTML = '<span class="dot"></span>LIVE';
+      span.innerHTML = '<span class="dot"></span>Шууд';
       const top = card.querySelector(".top");
       top.insertBefore(span, top.querySelector(".time"));
     } else if (!live && badge) badge.remove();
