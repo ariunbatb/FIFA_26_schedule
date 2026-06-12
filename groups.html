@@ -4,10 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ДАШТ 2026 — Хэсгийн хүснэгт</title>
+<script>
+// Apply saved theme before first paint to avoid a light-mode flash.
+if (localStorage.getItem("fifa26_theme") === "dark" ||
+    (!localStorage.getItem("fifa26_theme") && matchMedia("(prefers-color-scheme: dark)").matches))
+  document.documentElement.classList.add("dark");
+</script>
 <style>
   :root{
     --bg:#f6f8fb; --card:#ffffff; --ink:#15243b; --muted:#64748b;
     --accent:#0e7a4d; --accent2:#1d4ed8; --line:#e2e8f0;
+  }
+  html.dark{
+    --bg:#0f1623; --card:#1b2536; --ink:#e2e8f0; --muted:#8fa3bb;
+    --line:#2e3c52;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -16,20 +26,39 @@
   }
   header{
     background:linear-gradient(135deg,#0e7a4d 0%,#1d4ed8 60%,#b91c1c 100%);
-    color:#fff; text-align:center; padding:24px 16px 18px;
+    color:#fff; text-align:center; padding:24px 60px 18px;
+    position:relative;
   }
+  .theme-toggle{
+    position:absolute; top:14px; right:16px;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.55);
+    color:#fff; font-size:1.05rem; line-height:1; cursor:pointer;
+    transition:background .15s;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,.32);}
   header h1{font-size:1.6rem; letter-spacing:.5px;}
   header p{opacity:.92; margin-top:4px; font-size:.85rem;}
   .nav{
-    display:flex; justify-content:center; gap:10px; margin-top:14px;
+    display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;
   }
   .nav a{
     color:#fff; text-decoration:none; font-weight:700; font-size:.85rem;
     padding:6px 22px; border-radius:99px; border:1.5px solid rgba(255,255,255,.55);
-    transition:background .15s;
+    transition:background .15s; white-space:nowrap;
   }
   .nav a:hover{background:rgba(255,255,255,.18);}
   .nav a.active{background:#fff; color:var(--accent2); border-color:#fff;}
+  @media(max-width:560px){
+    .nav{
+      flex-wrap:nowrap; justify-content:flex-start;
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      gap:8px; padding:0 12px 4px;
+      scrollbar-width:none;
+    }
+    .nav::-webkit-scrollbar{display:none;}
+    .nav a{flex:none; padding:6px 16px; font-size:.8rem;}
+  }
   .container{width:100%; padding:18px;}
   .groups-grid{
     display:grid; gap:14px;
@@ -37,7 +66,7 @@
     align-items:start;
   }
   .gcard{
-    background:#fff; border:1px solid var(--line); border-radius:14px;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
     padding:12px 14px 8px; box-shadow:0 1px 2px rgba(15,23,42,.05);
   }
   .gcard h2{
@@ -47,6 +76,7 @@
     font-weight:800; color:var(--accent); background:#e8f5ef;
     padding:1px 10px; border-radius:99px; font-size:.85rem;
   }
+  html.dark .gcard h2 .badge{color:#4ade80; background:#173a2a;}
   table{width:100%; border-collapse:collapse; font-size:.78rem;}
   th{
     color:var(--muted); font-size:.62rem; font-weight:700; letter-spacing:.5px;
@@ -55,6 +85,7 @@
   }
   th.t{text-align:left;}
   td{padding:5px 3px; border-bottom:1px solid #f1f5f9; text-align:center;}
+  html.dark td{border-bottom-color:#26334a;}
   tr:last-child td{border-bottom:none;}
   td.pos{color:var(--muted); font-weight:700; width:18px;}
   td.team{text-align:left;}
@@ -66,6 +97,8 @@
   td.pts{font-weight:900; color:var(--accent);}
   tr.q td{background:#f3faf6;}
   tr.q td.pos{color:var(--accent);}
+  html.dark td.pts, html.dark tr.q td.pos{color:#4ade80;}
+  html.dark tr.q td{background:#14271e;}
   .note{
     text-align:center; color:var(--muted); font-size:.72rem; margin-top:14px;
   }
@@ -75,6 +108,7 @@
 <body>
 
 <header>
+  <button class="theme-toggle" id="themeToggle" title="Өдөр/шөнийн горим">🌙</button>
   <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
   <p>Хэсгийн хүснэгт · 12 хэсэг, 48 баг</p>
   <nav class="nav">
@@ -95,6 +129,17 @@
 </div>
 
 <script>
+// ===== Dark mode toggle =====
+const themeBtn = document.getElementById("themeToggle");
+const syncThemeIcon = () =>
+  themeBtn.textContent = document.documentElement.classList.contains("dark") ? "☀️" : "🌙";
+syncThemeIcon();
+themeBtn.addEventListener("click", () => {
+  const dark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("fifa26_theme", dark ? "dark" : "light");
+  syncThemeIcon();
+});
+
 // Mongolian country names (keyed by API English name)
 const MN = {
   "Mexico":"Мексик","South Africa":"Өмнөд Африк","South Korea":"Өмнөд Солонгос","Czechia":"Чех",

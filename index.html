@@ -18,11 +18,21 @@ window.__scoreFetch = (() => {
   ]).catch(err => err); // never an unhandled rejection; loadScores re-checks
 })();
 </script>
+<script>
+// Apply saved theme before first paint to avoid a light-mode flash.
+if (localStorage.getItem("fifa26_theme") === "dark" ||
+    (!localStorage.getItem("fifa26_theme") && matchMedia("(prefers-color-scheme: dark)").matches))
+  document.documentElement.classList.add("dark");
+</script>
 <style>
   :root{
     --bg:#f6f8fb; --card:#ffffff; --ink:#15243b; --muted:#64748b;
     --accent:#0e7a4d; --accent2:#1d4ed8; --line:#e2e8f0;
     --hl:#fff7e0; --hl-border:#f0b429;
+  }
+  html.dark{
+    --bg:#0f1623; --card:#1b2536; --ink:#e2e8f0; --muted:#8fa3bb;
+    --line:#2e3c52; --hl:#332a0f; --hl-border:#d09a1f;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -31,20 +41,39 @@ window.__scoreFetch = (() => {
   }
   header{
     background:linear-gradient(135deg,#0e7a4d 0%,#1d4ed8 60%,#b91c1c 100%);
-    color:#fff; text-align:center; padding:24px 16px 18px;
+    color:#fff; text-align:center; padding:24px 60px 18px;
+    position:relative;
   }
+  .theme-toggle{
+    position:absolute; top:14px; right:16px;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.55);
+    color:#fff; font-size:1.05rem; line-height:1; cursor:pointer;
+    transition:background .15s;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,.32);}
   header h1{font-size:1.6rem; letter-spacing:.5px;}
   header p{opacity:.92; margin-top:4px; font-size:.85rem;}
   .nav{
-    display:flex; justify-content:center; gap:10px; margin-top:14px;
+    display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;
   }
   .nav a{
     color:#fff; text-decoration:none; font-weight:700; font-size:.85rem;
     padding:6px 22px; border-radius:99px; border:1.5px solid rgba(255,255,255,.55);
-    transition:background .15s;
+    transition:background .15s; white-space:nowrap;
   }
   .nav a:hover{background:rgba(255,255,255,.18);}
   .nav a.active{background:#fff; color:var(--accent2); border-color:#fff;}
+  @media(max-width:560px){
+    .nav{
+      flex-wrap:nowrap; justify-content:flex-start;
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      gap:8px; padding:0 12px 4px;
+      scrollbar-width:none;
+    }
+    .nav::-webkit-scrollbar{display:none;}
+    .nav a{flex:none; padding:6px 16px; font-size:.8rem;}
+  }
   .legend{
     margin:10px auto; padding:0 16px;
     color:var(--muted); font-size:.78rem; text-align:center;
@@ -56,7 +85,7 @@ window.__scoreFetch = (() => {
   }
   @media(max-width:980px){.days-grid{grid-template-columns:1fr;}}
   .day{
-    background:#fff; border:1px solid var(--line); border-radius:14px;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
     padding:12px 14px 14px; box-shadow:0 1px 2px rgba(15,23,42,.05);
   }
   .day-header{
@@ -83,7 +112,7 @@ window.__scoreFetch = (() => {
   }
   .match .top .time{
     font-size:.88rem; font-weight:800; color:var(--ink);
-    background:#fff; border:1px solid var(--line);
+    background:var(--card); border:1px solid var(--line);
     padding:1px 9px; border-radius:7px;
   }
   .match .group-badge{
@@ -91,6 +120,8 @@ window.__scoreFetch = (() => {
     background:#e8f5ef; padding:1px 7px; border-radius:99px;
   }
   .match .group-badge.ko{color:var(--accent2); background:#e7edfd;}
+  html.dark .match .group-badge{color:#4ade80; background:#173a2a;}
+  html.dark .match .group-badge.ko{color:#93b4ff; background:#1d2b55;}
   .teams{
     display:flex; align-items:center; justify-content:center;
     gap:4px; flex-wrap:wrap; min-height:26px;
@@ -102,6 +133,7 @@ window.__scoreFetch = (() => {
     transition:background .15s;
   }
   .team:hover{background:#eef4ff;}
+  html.dark .team:hover{background:#26344a;}
   .team .flag-img{
     width:22px; height:15px; object-fit:cover;
     border-radius:2px; border:1px solid var(--line);
@@ -109,7 +141,7 @@ window.__scoreFetch = (() => {
   }
   .team .flag-ph{
     width:22px; height:15px; border-radius:2px; flex:none;
-    background:#e2e8f0; display:flex; align-items:center;
+    background:var(--line); display:flex; align-items:center;
     justify-content:center; font-size:.6rem;
   }
   .team.tbd{color:var(--muted); font-weight:500; cursor:default; font-size:.72rem;}
@@ -117,10 +149,11 @@ window.__scoreFetch = (() => {
   .vs{font-size:.58rem; font-weight:700; color:var(--muted); letter-spacing:1px; flex:none;}
   .score{
     font-size:.95rem; font-weight:900; color:#fff;
-    background:var(--accent); padding:1px 9px; border-radius:7px;
+    background:#64748b; padding:1px 9px; border-radius:7px;
     flex:none; letter-spacing:1px;
   }
-  .match.done{border-color:#bbe3cf; background:#f3faf6;}
+  .match.done{border-color:#c4cdd8; background:#e2e8ef;}
+  html.dark .match.done{border-color:#465872; background:#222e44;}
   .meta{
     margin-top:6px; padding-top:5px; border-top:1px dashed var(--line);
     display:flex; gap:4px; flex-wrap:wrap; align-items:center;
@@ -132,7 +165,7 @@ window.__scoreFetch = (() => {
   /* tooltip with the hovered country's full schedule */
   #tip{
     display:none; position:fixed; z-index:50;
-    background:#fff; border:1px solid var(--hl-border); border-radius:10px;
+    background:var(--card); border:1px solid var(--hl-border); border-radius:10px;
     box-shadow:0 8px 24px rgba(15,23,42,.18);
     padding:9px 12px; min-width:300px; pointer-events:none;
   }
@@ -156,9 +189,40 @@ window.__scoreFetch = (() => {
     font-size:.95rem; line-height:1; padding:0 2px;
     color:#cbd5e1; transition:color .15s, transform .15s;
   }
+  html.dark .save-btn{color:#475569;}
   .save-btn:hover{color:var(--hl-border); transform:scale(1.2);}
   .save-btn.on{color:var(--hl-border);}
   .hidden{display:none !important;}
+  /* country + date filters (sticky) */
+  .filter-bar{
+    position:sticky; top:0; z-index:40;
+    display:flex; justify-content:center; align-items:center; gap:8px;
+    margin:0 -18px 14px; padding:10px 18px; flex-wrap:wrap;
+    background:var(--bg); border-bottom:1px solid var(--line);
+    box-shadow:0 2px 8px rgba(15,23,42,.06);
+  }
+  .filter-bar label{font-size:.8rem; font-weight:700; color:var(--muted);}
+  .filter-bar select{
+    font-family:inherit; font-size:.85rem; font-weight:600; color:var(--ink);
+    background:var(--card); border:1.5px solid var(--line); border-radius:99px;
+    padding:6px 14px; cursor:pointer; outline:none; min-width:160px;
+    transition:border-color .15s;
+  }
+  .filter-bar select:hover, .filter-bar select:focus{border-color:var(--accent2);}
+  .today-btn{
+    border:1.5px solid var(--accent); cursor:pointer; font-size:.8rem; font-weight:700;
+    color:var(--accent); background:var(--card); border-radius:99px; padding:6px 14px;
+    transition:all .15s;
+  }
+  .today-btn:hover{background:#e8f5ef;}
+  html.dark .today-btn{color:#4ade80; border-color:#4ade80;}
+  html.dark .today-btn:hover{background:#173a2a;}
+  .today-btn.active, html.dark .today-btn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .clear-filter{
+    display:none; border:none; cursor:pointer; font-size:.75rem; font-weight:700;
+    color:#fff; background:var(--accent2); border-radius:99px; padding:6px 14px;
+  }
+  .clear-filter.show{display:inline-block;}
   #empty{
     display:none; text-align:center; color:var(--muted);
     padding:48px 16px; font-size:.9rem;
@@ -176,6 +240,7 @@ window.__scoreFetch = (() => {
 <body>
 
 <header>
+  <button class="theme-toggle" id="themeToggle" title="Өдөр/шөнийн горим">🌙</button>
   <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
   <p>Нийт 104 тоглолт · Улаанбаатарын цагаар 🇲🇳 · Монголын телевизүүд</p>
   <nav class="nav">
@@ -188,6 +253,18 @@ window.__scoreFetch = (() => {
 <p class="legend">💡 Улсын далбаа эсвэл нэр дээр хулганаа аваачвал тухайн улсын бүх тоглолтын хуваарь харагдана. Хасагдах шатны тоглолтуудын телевизийн суваг хараахан зарлагдаагүй байна.</p>
 
 <div class="container">
+  <div class="filter-bar">
+    <label for="countryFilter">🌍 Улс:</label>
+    <select id="countryFilter">
+      <option value="">Бүх улс</option>
+    </select>
+    <label for="dateFilter">📅 Өдөр:</label>
+    <select id="dateFilter">
+      <option value="">Бүх өдөр</option>
+    </select>
+    <button class="today-btn" id="todayBtn">📌 Өнөөдөр</button>
+    <button class="clear-filter" id="clearFilter">✕ Арилгах</button>
+  </div>
   <p id="empty">⭐ Хадгалсан тоглолт алга. Тоглолтын баруун дээд буланд байх ☆ товчийг дарж хадгална уу.</p>
   <div class="days-grid" id="app"></div>
 </div>
@@ -411,6 +488,7 @@ byDate.forEach(day => {
   const ko = isKO(day.matches[0][5]);
   const el = document.createElement("div");
   el.className = "day";
+  el.dataset.date = day.date;
   el.innerHTML = `
     <div class="day-header">
       <h2>📅 ${dateMN(day.date, true)}</h2><div class="rule"></div>
@@ -434,27 +512,134 @@ byDate.forEach(day => {
   app.appendChild(el);
 });
 
+// jump to today's section by default so there's no manual scrolling
+(() => {
+  if (location.hash === "#saved") return;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = document.querySelectorAll(".day");
+  for (let i = 0; i < byDate.length; i++) {
+    // "Friday, June 12" -> Date for June 12, 2026
+    const d = new Date(byDate[i].date.split(",")[1] + ", 2026");
+    if (d >= today) {
+      if (i > 0) days[i].scrollIntoView({ behavior: "smooth", block: "start" });
+      break;
+    }
+  }
+})();
+
+// ===== Dark mode toggle =====
+const themeBtn = document.getElementById("themeToggle");
+const syncThemeIcon = () =>
+  themeBtn.textContent = document.documentElement.classList.contains("dark") ? "☀️" : "🌙";
+syncThemeIcon();
+themeBtn.addEventListener("click", () => {
+  const dark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("fifa26_theme", dark ? "dark" : "light");
+  syncThemeIcon();
+});
+
 // ===== Saved matches: tabs + toggle =====
 const navAll = document.getElementById("navAll");
 const navSaved = document.getElementById("navSaved");
 const emptyMsg = document.getElementById("empty");
 let view = location.hash === "#saved" ? "saved" : "all";
 
+// country filter dropdown — options sorted by Mongolian name
+const countryFilter = document.getElementById("countryFilter");
+const dateFilter = document.getElementById("dateFilter");
+const todayBtn = document.getElementById("todayBtn");
+const clearFilter = document.getElementById("clearFilter");
+let country = "", dateSel = "";
+Object.keys(CODE)
+  .sort((a, b) => MN[a].localeCompare(MN[b], "mn"))
+  .forEach(n => {
+    const opt = document.createElement("option");
+    opt.value = n;
+    opt.textContent = MN[n];
+    countryFilter.appendChild(opt);
+  });
+// date filter options — one per match day, in schedule order
+byDate.forEach(d => {
+  const opt = document.createElement("option");
+  opt.value = d.date;
+  opt.textContent = dateMN(d.date, true);
+  dateFilter.appendChild(opt);
+});
+// today's entry in the schedule (if the tournament is on today)
+const todayDate = (() => {
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  const hit = byDate.find(d => new Date(d.date.split(",")[1] + ", 2026").getTime() === t.getTime());
+  return hit ? hit.date : null;
+})();
+
+function syncFilterUI(){
+  todayBtn.classList.toggle("active", !!dateSel && dateSel === todayDate);
+  clearFilter.classList.toggle("show", !!country || !!dateSel);
+}
+
 function applyView(){
   const sv = view === "saved";
   navAll.classList.toggle("active", !sv);
   navSaved.classList.toggle("active", sv);
+  let anyVisible = false;
   document.querySelectorAll(".day").forEach(day => {
     let any = false;
+    const dateOk = !dateSel || day.dataset.date === dateSel;
     day.querySelectorAll(".match").forEach(m => {
-      const show = !sv || savedSet.has(m.dataset.id);
+      const show = dateOk && (!sv || savedSet.has(m.dataset.id)) &&
+        (!country || m.dataset.teams.split("|").includes(country));
       m.classList.toggle("hidden", !show);
       if (show) any = true;
     });
     day.classList.toggle("hidden", !any);
+    if (any) anyVisible = true;
   });
-  emptyMsg.style.display = (sv && savedSet.size === 0) ? "block" : "none";
+  if (sv && savedSet.size === 0) {
+    emptyMsg.textContent = "⭐ Хадгалсан тоглолт алга. Тоглолтын баруун дээд буланд байх ☆ товчийг дарж хадгална уу.";
+    emptyMsg.style.display = "block";
+  } else if (!anyVisible) {
+    emptyMsg.textContent = "🔍 Шүүлтэд тохирох тоглолт алга.";
+    emptyMsg.style.display = "block";
+  } else {
+    emptyMsg.style.display = "none";
+  }
 }
+
+countryFilter.addEventListener("change", () => {
+  country = countryFilter.value;
+  syncFilterUI();
+  applyView();
+  if (country) window.scrollTo({ top: 0, behavior: "smooth" });
+});
+dateFilter.addEventListener("change", () => {
+  dateSel = dateFilter.value;
+  syncFilterUI();
+  applyView();
+  if (dateSel) window.scrollTo({ top: 0, behavior: "smooth" });
+});
+todayBtn.addEventListener("click", () => {
+  // toggle: second click clears the today filter
+  if (dateSel === todayDate && todayDate) {
+    dateSel = "";
+    dateFilter.value = "";
+  } else {
+    dateSel = todayDate || "__none__"; // no match today -> empty state
+    dateFilter.value = todayDate || "";
+  }
+  syncFilterUI();
+  applyView();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+clearFilter.addEventListener("click", () => {
+  country = "";
+  dateSel = "";
+  countryFilter.value = "";
+  dateFilter.value = "";
+  syncFilterUI();
+  applyView();
+});
 
 navSaved.addEventListener("click", e => {
   e.preventDefault();
