@@ -1,0 +1,44 @@
+name: Deploy to Vercel
+
+# Deploys the static site to Vercel production whenever main updates.
+# From a phone, just merge/push to main (or tap "Run workflow" below) and
+# this handles the deploy — no CLI needed.
+#
+# One-time setup: add these three repository secrets
+# (GitHub mobile app or browser -> repo Settings -> Secrets and variables -> Actions):
+#   VERCEL_TOKEN       - https://vercel.com/account/tokens
+#   VERCEL_ORG_ID      - from .vercel/project.json or Vercel project settings
+#   VERCEL_PROJECT_ID  - from .vercel/project.json or Vercel project settings
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel project settings
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build project
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to production
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
