@@ -1,0 +1,24 @@
+{
+  "name": "ДАШТ 2026 — Тоглолтын хуваарь",
+  "short_name": "ДАШТ 2026",
+  "description": "Хөлбөмбөгийн ДАШТ 2026 — бүх тоглолтын хуваарь, тв суваг, хэсгийн байр.",
+  "lang": "mn",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1411",
+  "theme_color": "#0b6b41",
+  "categories": ["sports", "news"],
+  "icons": [
+    { "src": "favicon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "favicon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Хуваарь", "url": "./index.html", "icons": [{ "src": "favicon.png", "sizes": "192x192" }] },
+    { "name": "Хэсэг", "url": "./groups.html", "icons": [{ "src": "favicon.png", "sizes": "192x192" }] },
+    { "name": "Статистик", "url": "./stats.html", "icons": [{ "src": "favicon.png", "sizes": "192x192" }] }
+  ]
+}

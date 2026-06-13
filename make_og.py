@@ -53,7 +53,7 @@ d.text((M, 230), "Хөлбөмбөгийн", font=f_title, fill="#ffffff")
 d.text((M, 330), "ДАШТ 2026", font=f_title, fill="#ffffff")
 
 # Subtitle
-d.text((M, 460), "Тоглолтын хуваарь · Шууд оноо · Хэсгийн байр",
+d.text((M, 460), "Тоглолтын хуваарь · ТВ суваг · Хэсгийн байр",
        font=f_sub, fill=(220, 240, 230))
 
 # URL bottom-left

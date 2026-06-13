@@ -488,12 +488,46 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     color:#fff; background:var(--muted); border-radius:4px; padding:1px 4px;
   }
   .md-noev{text-align:center; color:var(--muted); font-size:.78rem; padding:14px 0;}
+  .md-hl{padding:4px 16px 14px; border-top:1px solid var(--line);}
+  .md-hl-title{font-size:.72rem; font-weight:800; color:var(--muted); margin:8px 0; text-align:center;}
+  .md-hl-thumb{
+    position:relative; display:block; width:100%; aspect-ratio:16/9; background:#000;
+    border:1px solid var(--line); border-radius:12px; overflow:hidden;
+  }
+  .md-hl-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .md-hl-thumb:hover img{opacity:.82;}
+  .md-hl-play{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:58px; height:40px; border-radius:10px; background:#e23b2e;
+    box-shadow:0 4px 14px rgba(0,0,0,.4); transition:transform .15s, background .15s;
+  }
+  .md-hl-play::after{
+    content:""; position:absolute; top:50%; left:50%; transform:translate(-40%,-50%);
+    border-style:solid; border-width:8px 0 8px 14px; border-color:transparent transparent transparent #fff;
+  }
+  .md-hl-thumb:hover .md-hl-play{transform:translate(-50%,-50%) scale(1.08); background:#ff0033;}
+  .md-hl-cta{
+    position:absolute; left:0; right:0; bottom:0;
+    padding:14px 10px 7px; font-size:.72rem; font-weight:800; color:#fff;
+    text-align:center; background:linear-gradient(transparent, rgba(0,0,0,.7));
+  }
   .md-foot{
     display:flex; flex-wrap:wrap; gap:5px; align-items:center; justify-content:center;
     padding:12px 16px 16px; border-top:1px solid var(--line);
   }
   .md-foot-label{font-size:.66rem; color:var(--muted); font-weight:700; margin-right:2px;}
 </style>
+
+<!-- PWA: installable home-screen app + offline support -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b6b41">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ДАШТ 2026">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<script src="pwa.js" defer></script>
 </head>
 <body>
 
@@ -1298,6 +1332,102 @@ mdOverlay.innerHTML =
 document.body.appendChild(mdOverlay);
 const mdContent = mdOverlay.querySelector("#mdContent");
 
+// Highlight clips, keyed by "TeamA|TeamB" exactly as in the schedule (M[]).
+// Paste a YouTube video id (e.g. "dQw4w9WgXcQ") to embed the player; an empty
+// string falls back to a "search on YouTube" button. Knockout games (TBD) get
+// added here once the teams are known.
+const HIGHLIGHTS = {
+  // 6-р сарын 12
+  "Mexico|South Africa": "https://www.youtube.com/watch?v=PmevGCkUtM8",
+  "South Korea|Czechia": "https://www.youtube.com/watch?v=6k18EJY8zIc",
+  // 6-р сарын 13
+  "Canada|Bosnia and Herzegovina": "",
+  "USA|Paraguay": "",
+  // 6-р сарын 14
+  "Qatar|Switzerland": "",
+  "Brazil|Morocco": "",
+  "Haiti|Scotland": "",
+  "Australia|Türkiye": "",
+  // 6-р сарын 15
+  "Germany|Curaçao": "",
+  "Netherlands|Japan": "",
+  "Ivory Coast|Ecuador": "",
+  "Sweden|Tunisia": "",
+  // 6-р сарын 16
+  "Spain|Cape Verde": "",
+  "Belgium|Egypt": "",
+  "Saudi Arabia|Uruguay": "",
+  "Iran|New Zealand": "",
+  // 6-р сарын 17
+  "France|Senegal": "",
+  "Iraq|Norway": "",
+  "Argentina|Algeria": "",
+  "Austria|Jordan": "",
+  // 6-р сарын 18
+  "Portugal|DR Congo": "",
+  "England|Croatia": "",
+  "Ghana|Panama": "",
+  "Uzbekistan|Colombia": "",
+  // 6-р сарын 19
+  "Czechia|South Africa": "",
+  "Switzerland|Bosnia and Herzegovina": "",
+  "Canada|Qatar": "",
+  "Mexico|South Korea": "",
+  // 6-р сарын 20
+  "USA|Australia": "",
+  "Scotland|Morocco": "",
+  "Brazil|Haiti": "",
+  "Türkiye|Paraguay": "",
+  // 6-р сарын 21
+  "Netherlands|Sweden": "",
+  "Germany|Ivory Coast": "",
+  "Ecuador|Curaçao": "",
+  "Tunisia|Japan": "",
+  // 6-р сарын 22
+  "Spain|Saudi Arabia": "",
+  "Belgium|Iran": "",
+  "Uruguay|Cape Verde": "",
+  "New Zealand|Egypt": "",
+  // 6-р сарын 23
+  "Argentina|Austria": "",
+  "France|Iraq": "",
+  "Norway|Senegal": "",
+  "Jordan|Algeria": "",
+  // 6-р сарын 24
+  "Portugal|Uzbekistan": "",
+  "England|Ghana": "",
+  "Panama|Croatia": "",
+  "Colombia|DR Congo": "",
+  // 6-р сарын 25
+  "Switzerland|Canada": "",
+  "Bosnia and Herzegovina|Qatar": "",
+  "Scotland|Brazil": "",
+  "Morocco|Haiti": "",
+  "Czechia|Mexico": "",
+  "South Africa|South Korea": "",
+  // 6-р сарын 26
+  "Curaçao|Ivory Coast": "",
+  "Ecuador|Germany": "",
+  "Japan|Sweden": "",
+  "Tunisia|Netherlands": "",
+  "Türkiye|USA": "",
+  "Paraguay|Australia": "",
+  // 6-р сарын 27
+  "Norway|France": "",
+  "Senegal|Iraq": "",
+  "Uruguay|Spain": "",
+  "Cape Verde|Saudi Arabia": "",
+  "Egypt|Iran": "",
+  "New Zealand|Belgium": "",
+  // 6-р сарын 28
+  "Panama|England": "",
+  "Croatia|Ghana": "",
+  "Colombia|Portugal": "",
+  "DR Congo|Uzbekistan": "",
+  "Algeria|Austria": "",
+  "Jordan|Argentina": "",
+};
+
 // fifa code -> { mn name, flag url, emoji } via our canonical English name
 function codeToTeam(code){
   const our = CODE_TO_NAME[code];
@@ -1348,6 +1478,15 @@ function evRow(e){
     </div>`;
 }
 
+// accept a bare id OR any YouTube url (watch?v=, youtu.be/, /embed/, /shorts/)
+function ytId(s){
+  if (!s) return "";
+  s = String(s).trim();
+  if (/^[\w-]{11}$/.test(s)) return s;               // already a bare 11-char id
+  const m = s.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
+  return m ? m[1] : "";
+}
+
 function showMatchDetail(card){
   const [a, b] = card.dataset.teams.split("|");
   const [d, , , t] = card.dataset.id.split("|");
@@ -1357,7 +1496,7 @@ function showMatchDetail(card){
   const tB = b === "TBD" ? { mn: MN.TBD, flag:"", emoji:"⚽" } : codeToTeam(FIFA[b]);
   const g = (FIFA[a] && FIFA[b]) ? GAME_BY_PAIR[[FIFA[a], FIFA[b]].sort().join("|")] : null;
 
-  let scoreHTML = `<span class="vsbig">VS</span>`, statusHTML = "", evHTML = "";
+  let scoreHTML = `<span class="vsbig">VS</span>`, statusHTML = "", evHTML = "", hlHTML = "";
   if (g) {
     const finished = String(g.finished).toUpperCase() === "TRUE";
     const live = String(g.time_elapsed).toLowerCase() === "live";
@@ -1375,6 +1514,21 @@ function showMatchDetail(card){
       evHTML = events.length
         ? events.map(evRow).join("")
         : `<div class="md-noev">⚽ Гоол ороогүй</div>`;
+      // highlights: only show when a clip id is provided for this match
+      const vid = ytId(HIGHLIGHTS[card.dataset.teams]);
+      if (vid) {
+        // FIFA blocks inline embedding of its clips, so link out to YouTube via a thumbnail
+        hlHTML = `<div class="md-hl">
+            <div class="md-hl-title">Тойм</div>
+            <a class="md-hl-thumb" target="_blank" rel="noopener"
+               href="https://www.youtube.com/watch?v=${vid}">
+              <img src="https://i.ytimg.com/vi/${vid}/hqdefault.jpg" alt="Highlights" loading="lazy"
+                   onerror="this.style.display='none'">
+              <span class="md-hl-play" aria-hidden="true"></span>
+              <span class="md-hl-cta">YouTube дээр үзэх</span>
+            </a>
+          </div>`;
+      }
     }
   }
   if (!evHTML) evHTML = `<div class="md-noev">Тоглолт хараахан эхлээгүй</div>`;
@@ -1393,6 +1547,7 @@ function showMatchDetail(card){
      </div>
      <div class="md-sub">${dateMN(d, true)} · ${t} (УБ цагаар)</div>
      <div class="md-events">${evHTML}</div>
+     ${hlHTML}
      ${footHTML}`;
   mdOverlay.classList.add("open");
 }
