@@ -4,6 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ДАШТ 2026 — Тоглолтын хуваарь</title>
+<meta name="description" content="Хөлбөмбөгийн ДАШТ 2026 — бүх тоглолтын хуваарь, шууд оноо, хэсгийн байр, телевизийн суваг. Цагийн бүсээр харах боломжтой.">
+
+<!-- Open Graph (Facebook, Messenger, LinkedIn) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ДАШТ 2026 хуваарь">
+<meta property="og:locale" content="mn_MN">
+<meta property="og:url" content="https://fifa-26-schedule.vercel.app/">
+<meta property="og:title" content="Хөлбөмбөгийн ДАШТ 2026 — Тоглолтын хуваарь">
+<meta property="og:description" content="Бүх тоглолтын хуваарь, шууд оноо, хэсгийн байр, телевизийн суваг. Цагийн бүсээр харах боломжтой.">
+<meta property="og:image" content="https://fifa-26-schedule.vercel.app/og-image.png">
+<meta property="og:image:secure_url" content="https://fifa-26-schedule.vercel.app/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Хөлбөмбөгийн ДАШТ 2026 тоглолтын хуваарь">
+
+<!-- Twitter / X -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Хөлбөмбөгийн ДАШТ 2026 — Тоглолтын хуваарь">
+<meta name="twitter:description" content="Бүх тоглолтын хуваарь, шууд оноо, хэсгийн байр, телевизийн суваг.">
+<meta name="twitter:image" content="https://fifa-26-schedule.vercel.app/og-image.png">
 <link rel="preconnect" href="https://worldcup26.ir" crossorigin>
 <script>
 // Kick off score API calls immediately so they download while the page renders.
@@ -390,6 +411,88 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
       width:34px; height:3px; border-radius:0 0 3px 3px; background:currentColor;
     }
   }
+  .match{cursor:pointer;}
+  /* ===== Match-detail modal (click a match) ===== */
+  #mdOverlay{
+    display:none; position:fixed; inset:0; z-index:1300;
+    background:rgba(8,16,12,.55); backdrop-filter:blur(2px);
+    align-items:center; justify-content:center; padding:16px;
+  }
+  #mdOverlay.open{display:flex;}
+  #mdSheet{
+    position:relative; width:min(440px, 100%);
+    max-height:calc(100dvh - 32px); overflow-y:auto;
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.4);
+    animation:md-pop .18s ease;
+  }
+  @keyframes md-pop{from{opacity:0; transform:translateY(12px) scale(.98);} to{opacity:1; transform:none;}}
+  #mdClose{
+    position:absolute; top:12px; right:12px; z-index:2;
+    width:30px; height:30px; border-radius:50%; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--muted);
+    font-size:.9rem; line-height:1;
+  }
+  #mdClose:hover{color:var(--ink); border-color:var(--accent);}
+  .md-stage{
+    text-align:center; font-size:.66rem; font-weight:800; letter-spacing:.5px;
+    color:#fff; background:var(--accent); padding:8px 12px;
+    border-radius:18px 18px 0 0;
+  }
+  .md-stage.ko{background:var(--accent2);}
+  .md-head{
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:start;
+    gap:8px; padding:20px 16px 12px;
+  }
+  .md-team{display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;}
+  .md-team span{font-weight:700; font-size:.86rem;}
+  .md-flag{
+    width:62px; height:42px; object-fit:cover; border-radius:6px;
+    border:1px solid var(--line); box-shadow:0 2px 8px rgba(0,0,0,.18);
+  }
+  .md-flag.ph{display:flex; align-items:center; justify-content:center; font-size:1.6rem; background:var(--line);}
+  .md-score{display:flex; flex-direction:column; align-items:center; gap:4px; padding-top:8px;}
+  .md-score .num{
+    font-size:1.7rem; font-weight:900; letter-spacing:1px;
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
+  .md-score .vsbig{font-size:1rem; font-weight:800; color:var(--muted); letter-spacing:2px;}
+  .md-status{
+    font-size:.6rem; font-weight:800; letter-spacing:.5px;
+    padding:2px 9px; border-radius:99px; white-space:nowrap;
+    color:var(--muted); background:var(--hl); border:1px solid var(--line);
+  }
+  .md-status.live{color:#dc2626; background:#fee2e2; border-color:#fecaca;}
+  html.dark .md-status.live{color:#f87171; background:#3b1515; border-color:#5b1d1d;}
+  .md-sub{
+    text-align:center; color:var(--muted); font-size:.74rem;
+    padding:0 16px 12px; border-bottom:1px solid var(--line);
+  }
+  .md-events{padding:12px 16px;}
+  .md-ev{
+    display:grid; grid-template-columns:1fr 52px 1fr; align-items:center;
+    gap:8px; padding:5px 0; font-size:.78rem;
+  }
+  .md-ev + .md-ev{border-top:1px dashed var(--line);}
+  .md-ev-l{text-align:right;}
+  .md-ev-r{text-align:left;}
+  .md-ev-m{
+    text-align:center; font-weight:800; font-size:.66rem; color:var(--muted);
+    font-variant-numeric:tabular-nums;
+    background:var(--hl); border-radius:99px; padding:2px 0;
+  }
+  .md-goal{display:inline-flex; align-items:center; gap:5px; font-weight:600;}
+  .md-ev-r .md-goal{flex-direction:row-reverse;}
+  .md-tag{
+    font-size:.55rem; font-weight:800; letter-spacing:.3px;
+    color:#fff; background:var(--muted); border-radius:4px; padding:1px 4px;
+  }
+  .md-noev{text-align:center; color:var(--muted); font-size:.78rem; padding:14px 0;}
+  .md-foot{
+    display:flex; flex-wrap:wrap; gap:5px; align-items:center; justify-content:center;
+    padding:12px 16px 16px; border-top:1px solid var(--line);
+  }
+  .md-foot-label{font-size:.66rem; color:var(--muted); font-weight:700; margin-right:2px;}
 </style>
 </head>
 <body>
@@ -689,7 +792,7 @@ byDate.forEach(day => {
     </div>
     <div class="grid">
       ${day.matches.map(([d,a,b,t,ch,g]) => `
-        <div class="match" data-teams="${a}|${b}" data-id="${[d,a,b,t].join("|")}">
+        <div class="match" data-teams="${a}|${b}" data-id="${[d,a,b,t].join("|")}" data-g="${g}">
           <div class="top">
             <span class="group-badge ${isKO(g) ? "ko" : "g-info"}" ${isKO(g) ? "" : `data-g="${g}"`}
                   ${isKO(g) ? "" : 'title="Хэсгийн мэдээлэл харах"'}>${stageLabel(g)}</span>
@@ -899,20 +1002,31 @@ function showTip(el, c){
   tip.style.top  = Math.max(8, y) + "px";
 }
 
+// clicking a flag/country "pins" its schedule + highlight; hover previews it
+let pinnedCountry = null;
+function lightCountry(c, anchor){
+  document.body.classList.add("filtering");
+  cards.forEach(card => card.classList.toggle("lit", card.dataset.teams.split("|").includes(c)));
+  showTip(anchor, c);
+}
+function clearCountry(){
+  document.body.classList.remove("filtering");
+  cards.forEach(card => card.classList.remove("lit"));
+  tip.style.display = "none";
+}
 document.querySelectorAll(".team:not(.tbd)").forEach(el => {
-  el.addEventListener("mouseenter", () => {
+  el.addEventListener("mouseenter", () => { if (!pinnedCountry) lightCountry(el.dataset.c, el); });
+  el.addEventListener("mouseleave", () => { if (!pinnedCountry) clearCountry(); });
+  el.addEventListener("click", e => {
+    e.stopPropagation();          // don't open the match-detail modal
     const c = el.dataset.c;
-    document.body.classList.add("filtering");
-    cards.forEach(card => {
-      card.classList.toggle("lit", card.dataset.teams.split("|").includes(c));
-    });
-    showTip(el, c);
+    if (pinnedCountry === c) { pinnedCountry = null; clearCountry(); }
+    else { pinnedCountry = c; lightCountry(c, el); }
   });
-  el.addEventListener("mouseleave", () => {
-    document.body.classList.remove("filtering");
-    cards.forEach(card => card.classList.remove("lit"));
-    tip.style.display = "none";
-  });
+});
+// tap/click anywhere outside a flag releases a pinned country
+document.addEventListener("click", e => {
+  if (pinnedCountry && !e.target.closest(".team")) { pinnedCountry = null; clearCountry(); }
 });
 
 // ===== "Where to watch" channel-number popover =====
@@ -1055,6 +1169,9 @@ window.addEventListener("resize", hideGPop);
 const SCORE_CACHE_KEY = "wc26_scores_v1";
 // cards the API reports as in-progress — these stay LIVE regardless of the clock
 const liveCards = new Set();
+// raw API game keyed by "CODE|CODE" (sorted) + team-id→fifa-code map — read by the match-detail modal
+const GAME_BY_PAIR = {};
+let API_ID_TO_CODE = {};
 
 function applyScores(teams, games){
   // API wraps lists in an object: {teams:[...]}, {games:[...]}
@@ -1065,6 +1182,12 @@ function applyScores(teams, games){
   const idToCode = {};
   teamList.forEach(t => {
     idToCode[t.id] = t.fifa_code;
+  });
+  API_ID_TO_CODE = idToCode;
+  // expose every game (started or not) keyed by sorted fifa-code pair, for the detail modal
+  gameList.forEach(g => {
+    const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
+    if (hc && ac) GAME_BY_PAIR[[hc, ac].sort().join("|")] = g;
   });
   // map our English name -> fifa code, then build "CODE|CODE" -> card lookup
   const cardByPair = {};
@@ -1163,6 +1286,128 @@ async function loadScores(){
   }
 }
 loadScores();
+
+// ===== Match-detail modal: click a match card for the goal timeline =====
+const mdOverlay = document.createElement("div");
+mdOverlay.id = "mdOverlay";
+mdOverlay.innerHTML =
+  `<div id="mdSheet" role="dialog" aria-modal="true">
+     <button id="mdClose" aria-label="Хаах">✕</button>
+     <div id="mdContent"></div>
+   </div>`;
+document.body.appendChild(mdOverlay);
+const mdContent = mdOverlay.querySelector("#mdContent");
+
+// fifa code -> { mn name, flag url, emoji } via our canonical English name
+function codeToTeam(code){
+  const our = CODE_TO_NAME[code];
+  return {
+    mn: our ? MN[our] : code,
+    flag: (our && CODE[our]) ? `https://flagcdn.com/w160/${CODE[our]}.png` : "",
+    emoji: our ? (F[our] || "⚽") : "⚽"
+  };
+}
+function mdFlag(t){
+  return t.flag
+    ? `<img class="md-flag" src="${t.flag}" alt="${t.mn}"
+         onerror="this.outerHTML='&lt;span class=\\'md-flag ph\\'&gt;${t.emoji}&lt;/span&gt;'">`
+    : `<span class="md-flag ph">${t.emoji}</span>`;
+}
+
+// '{"F. Balogun 31'","D. Bobadilla 7'(OG)"}' -> [{name, min, minSort, og, pen}]
+function parseScorers(raw){
+  if (!raw || raw === "null") return [];
+  const inner = String(raw)
+    .replace(/^\s*\{/, "").replace(/\}\s*$/, "")
+    .replace(/[“”„‟]/g, '"');                       // normalise smart quotes
+  return inner.split(/"\s*,\s*"/)
+    .map(s => s.replace(/^"|"$/g, "").trim())
+    .filter(Boolean)
+    .map(p => {
+      const m = p.match(/^(.*?)(\d+'(?:\+\d+')?)\s*\(?(OG|PEN|PK|P)?\)?\s*$/);
+      if (!m) return { name: p, min: "", minSort: 999, og:false, pen:false };
+      const mm = m[2].match(/(\d+)'(?:\+(\d+))?/);
+      return {
+        name: m[1].trim(),
+        min: m[2],
+        minSort: mm ? parseInt(mm[1],10) + (mm[2] ? parseInt(mm[2],10)/100 : 0) : 999,
+        og: m[3] === "OG",
+        pen: m[3] === "PEN" || m[3] === "PK" || m[3] === "P"
+      };
+    });
+}
+
+function evRow(e){
+  const tag = e.og ? '<span class="md-tag">OG</span>'
+            : e.pen ? '<span class="md-tag">PEN</span>' : "";
+  const cell = `<span class="md-goal">⚽ ${e.name}${tag ? " " + tag : ""}</span>`;
+  return `<div class="md-ev">
+      <div class="md-ev-l">${e.side === "L" ? cell : ""}</div>
+      <div class="md-ev-m">${e.min}</div>
+      <div class="md-ev-r">${e.side === "R" ? cell : ""}</div>
+    </div>`;
+}
+
+function showMatchDetail(card){
+  const [a, b] = card.dataset.teams.split("|");
+  const [d, , , t] = card.dataset.id.split("|");
+  const grp = card.dataset.g;
+  const ko = isKO(grp);
+  const tA = a === "TBD" ? { mn: MN.TBD, flag:"", emoji:"⚽" } : codeToTeam(FIFA[a]);
+  const tB = b === "TBD" ? { mn: MN.TBD, flag:"", emoji:"⚽" } : codeToTeam(FIFA[b]);
+  const g = (FIFA[a] && FIFA[b]) ? GAME_BY_PAIR[[FIFA[a], FIFA[b]].sort().join("|")] : null;
+
+  let scoreHTML = `<span class="vsbig">VS</span>`, statusHTML = "", evHTML = "";
+  if (g) {
+    const finished = String(g.finished).toUpperCase() === "TRUE";
+    const live = String(g.time_elapsed).toLowerCase() === "live";
+    if (finished || live) {
+      const homeIsA = FIFA[a] === API_ID_TO_CODE[g.home_team_id];
+      const s1 = homeIsA ? g.home_score : g.away_score;
+      const s2 = homeIsA ? g.away_score : g.home_score;
+      scoreHTML = `<span class="num">${s1} : ${s2}</span>`;
+      statusHTML = live
+        ? `<span class="md-status live">● Шууд</span>`
+        : `<span class="md-status">Дууссан</span>`;
+      const events = parseScorers(g.home_scorers).map(e => ({ ...e, side: homeIsA ? "L" : "R" }))
+        .concat(parseScorers(g.away_scorers).map(e => ({ ...e, side: homeIsA ? "R" : "L" })))
+        .sort((x, y) => x.minSort - y.minSort);
+      evHTML = events.length
+        ? events.map(evRow).join("")
+        : `<div class="md-noev">⚽ Гоол ороогүй</div>`;
+    }
+  }
+  if (!evHTML) evHTML = `<div class="md-noev">Тоглолт хараахан эхлээгүй</div>`;
+
+  const meta = card.querySelector(".meta");
+  const footHTML = meta
+    ? `<div class="md-foot"><span class="md-foot-label">📺 Үзэх суваг:</span>${meta.innerHTML}</div>`
+    : "";
+
+  mdContent.innerHTML =
+    `<div class="md-stage ${ko ? "ko" : ""}">${stageLabel(grp)}</div>
+     <div class="md-head">
+       <div class="md-team">${mdFlag(tA)}<span>${tA.mn}</span></div>
+       <div class="md-score">${scoreHTML}${statusHTML}</div>
+       <div class="md-team">${mdFlag(tB)}<span>${tB.mn}</span></div>
+     </div>
+     <div class="md-sub">${dateMN(d, true)} · ${t} (УБ цагаар)</div>
+     <div class="md-events">${evHTML}</div>
+     ${footHTML}`;
+  mdOverlay.classList.add("open");
+}
+function closeMatchDetail(){ mdOverlay.classList.remove("open"); }
+
+cards.forEach(card => {
+  card.addEventListener("click", e => {
+    // let the inner controls (save / channel popover / group popover) handle their own clicks
+    if (e.target.closest(".save-btn, .ch.ch-num, .group-badge.g-info")) return;
+    showMatchDetail(card);
+  });
+});
+mdOverlay.addEventListener("click", e => { if (e.target === mdOverlay) closeMatchDetail(); });
+mdOverlay.querySelector("#mdClose").addEventListener("click", closeMatchDetail);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeMatchDetail(); });
 </script>
 
 <!-- ===== Floating AI chatbot button + popup ===== -->
