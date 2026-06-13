@@ -14,7 +14,8 @@ window.__scoreFetch = (() => {
   const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
   return Promise.all([
     fetch(API + "/get/teams", opts),
-    fetch(API + "/get/games", opts)
+    fetch(API + "/get/games", opts),
+    fetch(API + "/get/groups", opts)
   ]).catch(err => err); // never an unhandled rejection; loadScores re-checks
 })();
 </script>
@@ -143,6 +144,8 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   .match .group-badge.ko{color:var(--accent2); background:#e7edfd;}
   html.dark .match .group-badge{color:#4ade80; background:#173a2a;}
   html.dark .match .group-badge.ko{color:#93b4ff; background:#1d2b55;}
+  .match .group-badge.g-info{cursor:pointer; transition:filter .15s;}
+  .match .group-badge.g-info:hover{filter:brightness(.94);}
   .teams{
     display:grid; grid-template-columns:1fr auto 1fr;
     align-items:center; gap:4px; height:42px;
@@ -228,6 +231,56 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   #chpop .cp-numb.none{
     background:transparent; color:var(--muted); border-color:var(--line); font-weight:600;
   }
+  /* brief group-info popover (teams in the group) */
+  #gpop{
+    display:none; position:fixed; z-index:60;
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 12px 32px rgba(16,24,40,.22);
+    padding:10px 12px; min-width:248px;
+  }
+  #gpop .gp-head{
+    display:flex; align-items:center; gap:7px;
+    font-size:.8rem; font-weight:800; margin-bottom:8px;
+    padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  #gpop .gp-head .badge{
+    font-weight:800; color:var(--accent); background:var(--hl);
+    padding:1px 9px; border-radius:99px; font-size:.78rem;
+  }
+  html.dark #gpop .gp-head .badge{color:#4ade80;}
+  #gpop .gp-row{
+    display:flex; align-items:center; gap:7px;
+    font-size:.76rem; padding:3px 0; color:var(--ink);
+  }
+  #gpop .gp-row img{
+    width:20px; height:14px; object-fit:cover; border-radius:2px;
+    border:1px solid var(--line);
+  }
+  /* mini standings table */
+  #gpop table{width:100%; border-collapse:collapse; font-size:.72rem;}
+  #gpop th{
+    color:var(--muted); font-size:.58rem; font-weight:700; letter-spacing:.3px;
+    text-transform:uppercase; padding:2px 3px; border-bottom:1px solid var(--line);
+    text-align:center;
+  }
+  #gpop th.t{text-align:left;}
+  #gpop td{padding:3px 3px; border-bottom:1px solid var(--line); text-align:center; color:var(--ink);}
+  #gpop tr:last-child td{border-bottom:none;}
+  #gpop td.pos{color:var(--muted); font-weight:700; width:14px;}
+  #gpop td.tm{text-align:left;}
+  #gpop td.tm span{display:inline-flex; align-items:center; gap:5px; font-weight:600; white-space:nowrap;}
+  #gpop td.tm img{width:18px; height:12px; object-fit:cover; border-radius:2px; border:1px solid var(--line);}
+  #gpop td.pts{font-weight:900; color:var(--accent);}
+  #gpop tr.q td{background:var(--hl);}
+  #gpop tr.q td.pos{color:var(--accent);}
+  html.dark #gpop td.pts, html.dark #gpop tr.q td.pos{color:#4ade80;}
+  #gpop .gp-note{color:var(--muted); font-size:.64rem; margin-top:6px; text-align:center;}
+  #gpop .gp-link{
+    display:block; margin-top:8px; padding-top:7px;
+    border-top:1px solid var(--line); text-align:center;
+    font-size:.72rem; font-weight:700; color:var(--accent2); text-decoration:none;
+  }
+  #gpop .gp-link:hover{text-decoration:underline;}
   /* tooltip with the hovered country's full schedule */
   #tip{
     display:none; position:fixed; z-index:50;
@@ -638,7 +691,8 @@ byDate.forEach(day => {
       ${day.matches.map(([d,a,b,t,ch,g]) => `
         <div class="match" data-teams="${a}|${b}" data-id="${[d,a,b,t].join("|")}">
           <div class="top">
-            <span class="group-badge ${isKO(g) ? "ko" : ""}">${stageLabel(g)}</span>
+            <span class="group-badge ${isKO(g) ? "ko" : "g-info"}" ${isKO(g) ? "" : `data-g="${g}"`}
+                  ${isKO(g) ? "" : 'title="Хэсгийн мэдээлэл харах"'}>${stageLabel(g)}</span>
             <span class="time">${t}</span>
             <button class="save-btn ${savedSet.has([d,a,b,t].join("|")) ? "on" : ""}"
                     title="Хадгалах">${savedSet.has([d,a,b,t].join("|")) ? "★" : "☆"}</button>
@@ -896,6 +950,106 @@ document.addEventListener("click", e => {
 window.addEventListener("scroll", hideChPop, true);
 window.addEventListener("resize", hideChPop);
 
+// ===== Group-info popover: click a group badge for the standings =====
+// fallback team list derived from the schedule (shown until standings load)
+const GROUP_TEAMS = {};
+M.forEach(([d,a,b,t,ch,g]) => {
+  if (isKO(g)) return;
+  (GROUP_TEAMS[g] = GROUP_TEAMS[g] || []);
+  [a, b].forEach(n => {
+    if (n !== "TBD" && !GROUP_TEAMS[g].includes(n)) GROUP_TEAMS[g].push(n);
+  });
+});
+Object.values(GROUP_TEAMS).forEach(list =>
+  list.sort((x, y) => MN[x].localeCompare(MN[y], "mn")));
+
+// live standings, keyed by group letter — filled in by applyGroups()
+const N = v => parseInt(v, 10) || 0;
+const CODE_TO_NAME = {};
+Object.entries(FIFA).forEach(([name, code]) => { CODE_TO_NAME[code] = name; });
+const GROUP_STANDINGS = {};
+
+function applyGroups(teams, groups){
+  const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
+  const groupList = Array.isArray(groups) ? groups : groups.groups || groups.data || [];
+  const byId = {};
+  teamList.forEach(t => { byId[t.id] = t; });
+  groupList.forEach(g => {
+    const rows = (g.teams || []).map(s => {
+      const info = byId[s.team_id] || {};
+      const name = CODE_TO_NAME[info.fifa_code]; // our canonical English name
+      return {
+        label: name ? MN[name] : (info.name_en || "?"),
+        code: name ? CODE[name] : null,
+        flag: info.flag || "",
+        w:N(s.w), d:N(s.d), l:N(s.l), gf:N(s.gf), ga:N(s.ga), gd:N(s.gd), pts:N(s.pts),
+        mp: N(s.w) + N(s.d) + N(s.l)
+      };
+    }).sort((x, y) =>
+      y.pts - x.pts || y.gd - x.gd || y.gf - x.gf || x.label.localeCompare(y.label, "mn"));
+    if (rows.length) GROUP_STANDINGS[g.name] = rows;
+  });
+  // refresh the popover if it's currently open on a group we just got data for
+  if (gpop.style.display === "block" && gpop.dataset.g) showGPop(null, gpop.dataset.g);
+}
+
+const gpop = document.createElement("div");
+gpop.id = "gpop";
+document.body.appendChild(gpop);
+
+function flagImg(row){
+  const src = row.flag || (row.code ? `https://flagcdn.com/w40/${row.code}.png` : "");
+  return src ? `<img src="${src}" alt="" loading="lazy">` : "";
+}
+
+function showGPop(el, g){
+  const st = GROUP_STANDINGS[g];
+  let body;
+  if (st) {
+    const rows = st.map((s, i) => `
+      <tr class="${i < 2 ? "q" : ""}">
+        <td class="pos">${i + 1}</td>
+        <td class="tm"><span>${flagImg(s)}${s.label}</span></td>
+        <td>${s.mp}</td>
+        <td>${s.gd > 0 ? "+" : ""}${s.gd}</td>
+        <td class="pts">${s.pts}</td>
+      </tr>`).join("");
+    body =
+      `<table><thead><tr>
+        <th></th><th class="t">Баг</th>
+        <th title="Тоглосон">Т</th><th title="Гоолын зөрүү">+/-</th><th>Оноо</th>
+      </tr></thead><tbody>${rows}</tbody></table>`;
+  } else {
+    const teams = GROUP_TEAMS[g] || [];
+    body = teams.map(n => `<div class="gp-row">${miniFlag(n)} ${MN[n]}</div>`).join("");
+  }
+  gpop.dataset.g = g;
+  gpop.innerHTML =
+    `<div class="gp-head"><span class="badge">${g}</span> хэсэг</div>` +
+    `${body}<a class="gp-link" href="groups.html">Бүтэн хүснэгт харах →</a>`;
+  gpop.style.display = "block";
+  // position relative to the badge that opened it (kept across refreshes)
+  const anchor = el || gpop._anchor;
+  gpop._anchor = anchor;
+  if (!anchor) return;
+  const r = anchor.getBoundingClientRect();
+  const pw = gpop.offsetWidth, ph = gpop.offsetHeight;
+  let x = Math.min(r.left, innerWidth - pw - 10);
+  let y = r.bottom + 8;
+  if (y + ph > innerHeight - 10) y = r.top - ph - 8;
+  gpop.style.left = Math.max(8, x) + "px";
+  gpop.style.top  = Math.max(8, y) + "px";
+}
+const hideGPop = () => { gpop.style.display = "none"; gpop._anchor = null; };
+
+document.addEventListener("click", e => {
+  const badge = e.target.closest(".group-badge.g-info");
+  if (badge) { e.stopPropagation(); showGPop(badge, badge.dataset.g); }
+  else if (!e.target.closest("#gpop")) hideGPop();
+});
+window.addEventListener("scroll", hideGPop, true);
+window.addEventListener("resize", hideGPop);
+
 // ===== Match results from worldcup26.ir API =====
 // API + TOKEN are declared in <head>, where the requests are already in flight.
 const SCORE_CACHE_KEY = "wc26_scores_v1";
@@ -989,16 +1143,21 @@ async function loadScores(){
   // 1) paint instantly from the last visit's data
   try {
     const cached = JSON.parse(localStorage.getItem(SCORE_CACHE_KEY) || "null");
-    if (cached) applyScores(cached.teams, cached.games);
+    if (cached) {
+      applyScores(cached.teams, cached.games);
+      if (cached.groups) applyGroups(cached.teams, cached.groups);
+    }
   } catch (err) { /* bad cache — network result below overwrites it */ }
   // 2) refresh from the network (requests started in <head>)
   try {
-    const [teamsRes, gamesRes] = await window.__scoreFetch;
+    const [teamsRes, gamesRes, groupsRes] = await window.__scoreFetch;
     if (!teamsRes.ok || !gamesRes.ok) throw new Error("API error " + teamsRes.status + "/" + gamesRes.status);
     const teams = await teamsRes.json();
     const games = await gamesRes.json();
     applyScores(teams, games);
-    try { localStorage.setItem(SCORE_CACHE_KEY, JSON.stringify({ teams, games })); } catch (err) {}
+    let groups = null;
+    if (groupsRes && groupsRes.ok) { groups = await groupsRes.json(); applyGroups(teams, groups); }
+    try { localStorage.setItem(SCORE_CACHE_KEY, JSON.stringify({ teams, games, groups })); } catch (err) {}
   } catch (err) {
     console.warn("Score load failed:", err); // page still works without scores
   }
