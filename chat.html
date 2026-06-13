@@ -10,7 +10,8 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     (!localStorage.getItem("fifa26_theme") && matchMedia("(prefers-color-scheme: dark)").matches))
   document.documentElement.classList.add("dark");
 // Compact mode when shown inside the floating chat popup (index/groups/stats pages).
-if (new URLSearchParams(location.search).has("embed"))
+// Also check window.top: some hosts redirect to clean URLs and drop the ?embed query.
+if (new URLSearchParams(location.search).has("embed") || window.self !== window.top)
   document.documentElement.classList.add("embed");
 </script>
 <style>
@@ -142,9 +143,11 @@ if (new URLSearchParams(location.search).has("embed"))
   }
   #send:hover{transform:scale(1.06);}
   #send:disabled{opacity:.45; cursor:default; transform:none;}
-  /* embed mode: the popup supplies its own title bar, so hide the page header */
+  /* embed mode: the popup supplies its own title bar, so hide the page header
+     and the mobile tab bar (it would cover the input row inside the popup) */
   html.embed header{display:none;}
-  html.embed .chat-wrap{padding:10px 10px 10px;}
+  html.embed .tabbar{display:none !important;}
+  html.embed .chat-wrap{padding:10px 10px 10px !important;}
   /* Mobile bottom tab bar */
   .tabbar{display:none;}
   @media(max-width:560px){

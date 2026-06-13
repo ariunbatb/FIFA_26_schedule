@@ -200,6 +200,34 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     font-size:.6rem; font-weight:800; letter-spacing:.4px; color:#fff;
     padding:2px 7px; border-radius:4px; white-space:nowrap;
   }
+  .ch.ch-num{cursor:pointer; transition:filter .15s;}
+  .ch.ch-num:hover{filter:brightness(1.12);}
+  /* "Where to watch" channel-number popover */
+  #chpop{
+    display:none; position:fixed; z-index:60;
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 12px 32px rgba(16,24,40,.22);
+    padding:10px 12px; min-width:220px;
+  }
+  #chpop .cp-head{
+    display:flex; align-items:center; gap:7px;
+    font-size:.78rem; font-weight:800; margin-bottom:8px;
+    padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  #chpop .cp-head .ch{font-size:.58rem;}
+  #chpop .cp-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    font-size:.74rem; padding:3px 0; color:var(--ink);
+  }
+  #chpop .cp-prov{color:var(--muted); font-weight:600;}
+  #chpop .cp-numb{
+    font-weight:800; font-variant-numeric:tabular-nums;
+    background:var(--hl); color:var(--accent); border:1px solid var(--hl-border);
+    border-radius:6px; padding:1px 9px; min-width:34px; text-align:center;
+  }
+  #chpop .cp-numb.none{
+    background:transparent; color:var(--muted); border-color:var(--line); font-weight:600;
+  }
   /* tooltip with the hovered country's full schedule */
   #tip{
     display:none; position:fixed; z-index:50;
@@ -432,6 +460,17 @@ const CH = {
   "EDU TV":"#16a34a","MNB":"#ea580c","NTV":"#dc2626",
   "NSPORTS":"#2563eb","SULD TV":"#7c3aed","TBA":"#94a3b8"
 };
+// Which channel NUMBER each broadcaster sits on, per TV provider.
+// Fill in the verified numbers; "" = unknown/unconfirmed, null = not carried.
+// Add or rename providers in PROVIDERS and they'll show up automatically.
+const PROVIDERS = ["Univision", "Skymedia", "DDish", "Mobihome"];
+const CHNUM = {
+  "EDU TV":  { Univision:"10", Skymedia:"9", DDish:"6", Mobihome: "14"},
+  "MNB":     { Univision:"1", Skymedia:"2", DDish:"1", Mobihome: "3"},
+  "NTV":     { Univision:"8", Skymedia:"3", DDish:"9", Mobihome: "9"},
+  "NSPORTS": { Univision:"60", Skymedia:"600", DDish:"29", Mobihome: "35"},
+  "SULD TV": { Univision:"19", Skymedia:"19", DDish:"19", Mobihome: "19"}
+};
 // d=UB date, a/b=teams, t=UB time, ch=channels, g=group or stage
 const M = [
 ["Friday, June 12","Mexico","South Africa","03:00",["EDU TV","MNB","NTV","NSPORTS"],"A"],
@@ -547,8 +586,12 @@ const stageLabel = g => ({
 }[g] || g + " хэсэг");
 const isKO = g => !!{R32:1,R16:1,QF:1,SF:1,"3RD":1,FINAL:1}[g];
 
-const chHTML = list => list.map(c =>
-  `<span class="ch" style="background:${CH[c] || "#94a3b8"}">${c === "TBA" ? "Тодорхойгүй" : c}</span>`).join("");
+const chHTML = list => list.map(c => {
+  const known = CHNUM[c] && PROVIDERS.some(p => CHNUM[c][p]);
+  return `<span class="ch${known ? " ch-num" : ""}" data-ch="${c}"
+    style="background:${CH[c] || "#94a3b8"}"
+    title="${known ? "Сувгийн дугаар харах" : ""}">${c === "TBA" ? "Тодорхойгүй" : c}</span>`;
+}).join("");
 
 function teamHTML(n){
   if (n === "TBD") {
@@ -818,9 +861,46 @@ document.querySelectorAll(".team:not(.tbd)").forEach(el => {
   });
 });
 
+// ===== "Where to watch" channel-number popover =====
+const chpop = document.createElement("div");
+chpop.id = "chpop";
+document.body.appendChild(chpop);
+
+function showChPop(el, c){
+  const map = CHNUM[c] || {};
+  const rows = PROVIDERS.map(p => {
+    const n = map[p];
+    const cell = n ? `<span class="cp-numb">${n}</span>`
+                   : `<span class="cp-numb none">—</span>`;
+    return `<div class="cp-row"><span class="cp-prov">${p}</span>${cell}</div>`;
+  }).join("");
+  chpop.innerHTML =
+    `<div class="cp-head"><span class="ch" style="background:${CH[c] || "#94a3b8"}">${c}</span>` +
+    `сувгийн дугаар</div>${rows}`;
+  chpop.style.display = "block";
+  const r = el.getBoundingClientRect();
+  const pw = chpop.offsetWidth, ph = chpop.offsetHeight;
+  let x = Math.min(r.left, innerWidth - pw - 10);
+  let y = r.bottom + 8;
+  if (y + ph > innerHeight - 10) y = r.top - ph - 8;
+  chpop.style.left = Math.max(8, x) + "px";
+  chpop.style.top  = Math.max(8, y) + "px";
+}
+const hideChPop = () => { chpop.style.display = "none"; };
+
+document.addEventListener("click", e => {
+  const badge = e.target.closest(".ch.ch-num");
+  if (badge) { e.stopPropagation(); showChPop(badge, badge.dataset.ch); }
+  else if (!e.target.closest("#chpop")) hideChPop();
+});
+window.addEventListener("scroll", hideChPop, true);
+window.addEventListener("resize", hideChPop);
+
 // ===== Match results from worldcup26.ir API =====
 // API + TOKEN are declared in <head>, where the requests are already in flight.
 const SCORE_CACHE_KEY = "wc26_scores_v1";
+// cards the API reports as in-progress — these stay LIVE regardless of the clock
+const liveCards = new Set();
 
 function applyScores(teams, games){
   // API wraps lists in an object: {teams:[...]}, {games:[...]}
@@ -842,7 +922,9 @@ function applyScores(teams, games){
   });
 
   gameList.forEach(g => {
-    if (String(g.finished).toUpperCase() !== "TRUE") return; // only completed matches ("finished" is a string)
+    const finished = String(g.finished).toUpperCase() === "TRUE";
+    const live = String(g.time_elapsed).toLowerCase() === "live";
+    if (!finished && !live) return; // skip not-yet-started matches (no score to show)
     const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
     if (!hc || !ac) return;
     const card = cardByPair[[hc, ac].sort().join("|")];
@@ -860,9 +942,15 @@ function applyScores(teams, games){
       if (!vs) return;
       vs.outerHTML = `<span class="score">${s1} : ${s2}</span>`;
     }
-    card.classList.add("done");
+    if (finished) {            // full time: lock the score, drop the LIVE badge
+      card.classList.add("done");
+      liveCards.delete(card);
+    } else {                   // in progress: keep score updating + LIVE badge on
+      card.classList.remove("done");
+      liveCards.add(card);
+    }
   });
-  updateLive(); // a match just marked done must drop its LIVE badge
+  updateLive(); // refresh LIVE badges now that statuses may have changed
 }
 
 // ===== Live indicator: kickoff reached but match not finished yet =====
@@ -870,11 +958,18 @@ const LIVE_WINDOW_MS = 150 * 60 * 1000; // ~2.5h covers halftime + stoppage
 function updateLive(){
   const now = Date.now();
   cards.forEach(card => {
-    const [d,,,t] = card.dataset.id.split("|");
-    // "Friday, June 12" + "03:00" -> Date (UB time, same as the schedule)
-    const start = new Date(d.split(", ")[1] + ", 2026 " + t).getTime();
-    const live = !card.classList.contains("done") &&
-                 now >= start && now < start + LIVE_WINDOW_MS;
+    let live;
+    if (card.classList.contains("done")) {
+      live = false;                 // finished — never live
+    } else if (liveCards.has(card)) {
+      live = true;                  // API confirms it's in progress
+    } else {
+      // no API status yet — fall back to the kickoff-time window
+      const [d,,,t] = card.dataset.id.split("|");
+      // "Friday, June 12" + "03:00" -> Date (UB time, same as the schedule)
+      const start = new Date(d.split(", ")[1] + ", 2026 " + t).getTime();
+      live = now >= start && now < start + LIVE_WINDOW_MS;
+    }
     card.classList.toggle("live", live);
     const badge = card.querySelector(".live-badge");
     if (live && !badge) {
