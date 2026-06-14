@@ -27,9 +27,12 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     background:var(--bg); color:var(--ink); padding-bottom:40px;
   }
   header{
-    background:var(--accent);
-    color:#fff; text-align:center; padding:24px 60px 18px;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 26px, transparent 26px 52px),
+      radial-gradient(130% 170% at 50% -50%, #128a54 0%, #0b6b41 48%, #084f31 100%);
+    color:#fff; text-align:center; padding:30px 60px 20px;
     position:relative;
+    border-bottom:4px solid #d9a513;
   }
   .theme-toggle{
     position:absolute; top:14px; right:16px;
@@ -39,8 +42,108 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     transition:background .15s;
   }
   .theme-toggle:hover{background:rgba(255,255,255,.32);}
-  header h1{font-size:1.6rem; letter-spacing:.5px;}
-  header p{opacity:.92; margin-top:4px; font-size:.85rem;}
+  .info-btn{
+    position:absolute; top:14px; left:16px;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.55);
+    color:#fff; font-size:1.05rem; line-height:1; cursor:pointer;
+    transition:background .15s;
+  }
+  .info-btn:hover{background:rgba(255,255,255,.32);}
+
+  /* ===== About / contact / donate modal ===== */
+  #aboutOverlay{
+    display:none; position:fixed; inset:0; z-index:1400;
+    background:rgba(8,16,12,.55); backdrop-filter:blur(2px);
+    align-items:center; justify-content:center; padding:16px;
+  }
+  #aboutOverlay.open{display:flex;}
+  #aboutSheet{
+    position:relative; width:min(420px,100%);
+    max-height:calc(100dvh - 32px); overflow-y:auto;
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.4); animation:md-pop .18s ease;
+    padding:22px 20px 18px; text-align:center;
+  }
+  @keyframes md-pop{from{opacity:0; transform:translateY(12px) scale(.98);} to{opacity:1; transform:none;}}
+  #aboutClose{
+    position:absolute; top:12px; right:12px;
+    width:30px; height:30px; border-radius:50%; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--muted);
+    font-size:.9rem; line-height:1;
+  }
+  #aboutClose:hover{color:var(--ink); border-color:var(--accent);}
+  #aboutSheet h2{font-size:1.1rem; margin-bottom:5px;}
+  #aboutSheet .about-desc{color:var(--muted); font-size:.78rem; line-height:1.45;}
+  .about-icon{
+    width:50px; height:50px; margin:6px auto 10px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; font-size:1.6rem;
+    background:var(--hl,rgba(14,122,77,.10)); border:1px solid var(--line);
+  }
+  .about-row{
+    display:flex; align-items:center; gap:11px; width:100%;
+    margin-top:14px; padding:10px 13px; border-radius:12px;
+    background:var(--hl,rgba(14,122,77,.10)); border:1px solid var(--line);
+    text-decoration:none; color:var(--ink); text-align:left;
+    transition:border-color .15s;
+  }
+  .about-row:hover{border-color:var(--accent);}
+  .about-row .r-ico{font-size:1.15rem; flex:0 0 auto;}
+  .about-row .r-body{display:flex; flex-direction:column; line-height:1.3; min-width:0;}
+  .about-row .r-label{
+    font-size:.6rem; font-weight:800; letter-spacing:.5px;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .about-row .r-val{font-weight:700; font-size:.85rem; overflow:hidden; text-overflow:ellipsis;}
+  .donate-head{
+    display:flex; align-items:baseline; justify-content:space-between; margin:16px 2px 0;
+  }
+  .donate-head .d-title{font-size:.82rem; font-weight:600;}
+  .donate-head .d-sub{font-size:.7rem; color:var(--muted); font-weight:600;}
+  .about-note{margin-top:10px; color:var(--muted); font-size:.72rem;}
+  .copy-acct{
+    position:relative; margin-top:10px; width:100%; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:11px 40px; border-radius:12px;
+    background:var(--hl,rgba(14,122,77,.10)); border:1px solid var(--line); color:var(--ink);
+    font:inherit; transition:border-color .15s;
+  }
+  .copy-acct:hover{border-color:var(--accent);}
+  .copy-acct .acct-num{
+    font-weight:600; letter-spacing:.5px; font-size:.92rem;
+    font-variant-numeric:tabular-nums; text-align:center;
+  }
+  .copy-acct .acct-ico{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    display:flex; color:var(--muted);
+  }
+  .copy-acct .acct-ico svg{width:17px; height:17px;}
+  .copy-acct.copied{border-color:var(--accent); color:var(--accent-deep,var(--accent));}
+  .copy-acct.copied .acct-ico{color:var(--accent);}
+  html.dark .copy-acct.copied,
+  html.dark .copy-acct.copied .acct-ico{color:var(--hl-border,var(--accent));}
+
+  /* ===== Site footer ===== */
+  .site-footer{
+    margin-top:36px; padding:22px 16px;
+    border-top:1px solid var(--line); background:var(--card);
+  }
+  .foot-inner{
+    max-width:760px; margin:0 auto;
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:8px 18px; font-size:.82rem;
+  }
+  .foot-link{
+    display:inline-flex; align-items:center; gap:5px;
+    color:var(--accent-deep,var(--accent)); background:none; border:none; cursor:pointer;
+    font:inherit; font-weight:700; text-decoration:none; padding:4px 2px;
+  }
+  html.dark .foot-link{color:var(--hl-border,var(--accent));}
+  .foot-link:hover{text-decoration:underline;}
+  .foot-copy{color:var(--muted); font-weight:600;}
+  @media(max-width:560px){ .site-footer{margin-bottom:78px;} }
+  header h1{font-size:1.75rem; letter-spacing:-.3px; text-shadow:0 2px 10px rgba(0,0,0,.28);}
+  header p{opacity:.85; margin-top:6px; font-size:.85rem; letter-spacing:.2px;}
   .nav{
     display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;
   }
@@ -50,7 +153,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     transition:background .15s; white-space:nowrap;
   }
   .nav a:hover{background:rgba(255,255,255,.15);}
-  .nav a.active{background:#fff; color:var(--accent); border-color:#fff;}
+  .nav a.active{background:#fff; color:#084f31; border-color:#fff; box-shadow:0 2px 10px rgba(0,0,0,.22);}
   @media(max-width:560px){
     header{padding:26px 14px 16px;}
     .nav{
@@ -149,6 +252,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
 <body>
 
 <header>
+  <button class="info-btn" id="infoBtn" title="Дэмжих · Холбоо барих">☕</button>
   <button class="theme-toggle" id="themeToggle" title="Өдөр/шөнийн горим">🌙</button>
   <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
   <p>Хэсгийн хүснэгт · 12 хэсэг, 48 баг</p>
@@ -319,7 +423,11 @@ loadGroups();
   }
   #chatPanel iframe{flex:1; width:100%; border:none; background:var(--bg,#f6f7f9);}
   @media(max-width:560px){
-    #chatFab{bottom:calc(82px + env(safe-area-inset-bottom));}
+    #chatFab{
+      bottom:calc(82px + env(safe-area-inset-bottom));
+      padding:7px 14px; font-size:.78rem; gap:0;
+    }
+    #chatFab .ico{display:none;}
     #chatPanel{
       bottom:calc(136px + env(safe-area-inset-bottom));
       height:min(560px, calc(100dvh - 200px));
@@ -347,6 +455,83 @@ loadGroups();
   });
   document.getElementById("chatClose").addEventListener("click", () =>
     panel.classList.remove("open"));
+})();
+</script>
+
+<footer class="site-footer">
+  <div class="foot-inner">
+    <button class="foot-link" id="footDonate">☕ Donation</button>
+    <span class="foot-copy">© 2026 · Хөлбөмбөгийн ДАШТ хуваарь</span>
+  </div>
+</footer>
+
+<div id="aboutOverlay" role="dialog" aria-modal="true" aria-label="Тухай">
+  <div id="aboutSheet">
+    <button id="aboutClose" title="Хаах">✕</button>
+    <div class="about-icon">⚽</div>
+    <h2>Хөлбөмбөгийн ДАШТ-2026</h2>
+    <p class="about-desc">
+      2026 оны Дэлхийн аварга шалгаруулах тэмцээний бүх тоглолтын хуваарь, телевизийн сувгийн мэдээлэл,
+      хэсгийн байр, статистикийг хүргэдэг веб.
+    </p>
+
+    <div class="donate-head">
+      <span class="d-title">✉️ Холбоо барих</span>
+    </div>
+    <a class="copy-acct" href="mailto:ariunbat_cs@yahoo.com">
+      <span class="acct-num">ariunbat_cs@yahoo.com</span>
+    </a>
+
+    <div class="donate-head">
+      <span class="d-title">☕ Donation</span>
+      <span class="d-sub">ХХБ · Ариунбат</span>
+    </div>
+    <button class="copy-acct" id="copyAcct" data-acct="MN420004000466063833" title="Хуулах">
+      <span class="acct-num">MN42 0004 0004 6606 3833</span>
+      <span class="acct-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      </span>
+    </button>
+
+    <p class="about-note">AI чат ботын талаар мэдээлэл авахыг хүсвэл <a href="https://www.mongolgpt.mn/" target="_blank" rel="noopener" style="color:var(--accent); font-weight:700;">mongolgpt.mn</a> сайтаас мэдээлэл авна уу.</p>
+  </div>
+</div>
+
+<script>
+// ===== About / contact / donate modal =====
+(() => {
+  const overlay = document.getElementById("aboutOverlay");
+  const open  = () => overlay.classList.add("open");
+  const close = () => overlay.classList.remove("open");
+  ["infoBtn", "footDonate"].forEach(id =>
+    document.getElementById(id)?.addEventListener("click", open));
+  document.getElementById("aboutClose").addEventListener("click", close);
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && overlay.classList.contains("open")) close();
+  });
+  const copyBtn = document.getElementById("copyAcct");
+  if (copyBtn) {
+    const ico = copyBtn.querySelector(".acct-ico");
+    const copySvg = ico.innerHTML;
+    const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    copyBtn.addEventListener("click", async () => {
+      const acct = copyBtn.dataset.acct;
+      try {
+        await navigator.clipboard.writeText(acct);
+      } catch (err) {
+        const t = document.createElement("textarea");
+        t.value = acct; document.body.appendChild(t); t.select();
+        document.execCommand("copy"); t.remove();
+      }
+      copyBtn.classList.add("copied");
+      ico.innerHTML = checkSvg;
+      setTimeout(() => {
+        copyBtn.classList.remove("copied");
+        ico.innerHTML = copySvg;
+      }, 1500);
+    });
+  }
 })();
 </script>
 </body>

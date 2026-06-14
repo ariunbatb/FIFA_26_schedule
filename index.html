@@ -81,6 +81,14 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     transition:background .15s;
   }
   .theme-toggle:hover{background:rgba(255,255,255,.32);}
+  .info-btn{
+    position:absolute; top:14px; left:16px;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.55);
+    color:#fff; font-size:1.05rem; line-height:1; cursor:pointer;
+    transition:background .15s;
+  }
+  .info-btn:hover{background:rgba(255,255,255,.32);}
   header h1{font-size:1.75rem; letter-spacing:-.3px; text-shadow:0 2px 10px rgba(0,0,0,.28);}
   header p{opacity:.85; margin-top:6px; font-size:.85rem; letter-spacing:.2px;}
   .nav{
@@ -228,7 +236,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   .ch.ch-num:hover{filter:brightness(1.12);}
   /* "Where to watch" channel-number popover */
   #chpop{
-    display:none; position:fixed; z-index:60;
+    display:none; position:fixed; z-index:1400;  /* above the match-detail modal (1300) */
     background:var(--card); border:1px solid var(--line); border-radius:12px;
     box-shadow:0 12px 32px rgba(16,24,40,.22);
     padding:10px 12px; min-width:220px;
@@ -412,6 +420,96 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     }
   }
   .match{cursor:pointer;}
+  /* ===== Site footer ===== */
+  .site-footer{
+    margin-top:36px; padding:22px 16px;
+    border-top:1px solid var(--line); background:var(--card);
+  }
+  .foot-inner{
+    max-width:760px; margin:0 auto;
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:8px 18px; font-size:.82rem;
+  }
+  .foot-link{
+    display:inline-flex; align-items:center; gap:5px;
+    color:var(--accent-deep); background:none; border:none; cursor:pointer;
+    font:inherit; font-weight:700; text-decoration:none; padding:4px 2px;
+  }
+  html.dark .foot-link{color:var(--hl-border);}
+  .foot-link:hover{text-decoration:underline;}
+  .foot-copy{color:var(--muted); font-weight:600;}
+
+  /* ===== About / contact / donate modal ===== */
+  #aboutOverlay{
+    display:none; position:fixed; inset:0; z-index:1400;
+    background:rgba(8,16,12,.55); backdrop-filter:blur(2px);
+    align-items:center; justify-content:center; padding:16px;
+  }
+  #aboutOverlay.open{display:flex;}
+  #aboutSheet{
+    position:relative; width:min(420px,100%);
+    max-height:calc(100dvh - 32px); overflow-y:auto;
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.4); animation:md-pop .18s ease;
+    padding:22px 20px 18px; text-align:center;
+  }
+  #aboutClose{
+    position:absolute; top:12px; right:12px;
+    width:30px; height:30px; border-radius:50%; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--muted);
+    font-size:.9rem; line-height:1;
+  }
+  #aboutClose:hover{color:var(--ink); border-color:var(--accent);}
+  #aboutSheet h2{font-size:1.1rem; margin-bottom:5px;}
+  #aboutSheet .about-desc{color:var(--muted); font-size:.78rem; line-height:1.45;}
+  .about-icon{
+    width:50px; height:50px; margin:6px auto 10px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; font-size:1.6rem;
+    background:var(--hl); border:1px solid var(--line);
+  }
+  .about-row{
+    display:flex; align-items:center; gap:11px; width:100%;
+    margin-top:14px; padding:10px 13px; border-radius:12px;
+    background:var(--hl); border:1px solid var(--line);
+    text-decoration:none; color:var(--ink); text-align:left;
+    transition:border-color .15s;
+  }
+  .about-row:hover{border-color:var(--accent);}
+  .about-row .r-ico{font-size:1.15rem; flex:0 0 auto;}
+  .about-row .r-body{display:flex; flex-direction:column; line-height:1.3; min-width:0;}
+  .about-row .r-label{
+    font-size:.6rem; font-weight:800; letter-spacing:.5px;
+    text-transform:uppercase; color:var(--muted);
+  }
+  .about-row .r-val{font-weight:700; font-size:.85rem; overflow:hidden; text-overflow:ellipsis;}
+  .donate-head{
+    display:flex; align-items:baseline; justify-content:space-between; margin:16px 2px 0;
+  }
+  .donate-head .d-title{font-size:.82rem; font-weight:600;}
+  .donate-head .d-sub{font-size:.7rem; color:var(--muted); font-weight:600;}
+  .about-note{margin-top:10px; color:var(--muted); font-size:.72rem;}
+  .copy-acct{
+    position:relative; margin-top:10px; width:100%; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:11px 40px; border-radius:12px;
+    background:var(--hl); border:1px solid var(--line); color:var(--ink);
+    font:inherit; transition:border-color .15s;
+  }
+  .copy-acct:hover{border-color:var(--accent);}
+  .copy-acct .acct-num{
+    font-weight:600; letter-spacing:.5px; font-size:.92rem;
+    font-variant-numeric:tabular-nums; text-align:center;
+  }
+  .copy-acct .acct-ico{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    display:flex; color:var(--muted);
+  }
+  .copy-acct .acct-ico svg{width:17px; height:17px;}
+  .copy-acct.copied{border-color:var(--accent); color:var(--accent-deep);}
+  .copy-acct.copied .acct-ico{color:var(--accent);}
+  html.dark .copy-acct.copied,
+  html.dark .copy-acct.copied .acct-ico{color:var(--hl-border);}
+
   /* ===== Match-detail modal (click a match) ===== */
   #mdOverlay{
     display:none; position:fixed; inset:0; z-index:1300;
@@ -488,6 +586,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     color:#fff; background:var(--muted); border-radius:4px; padding:1px 4px;
   }
   .md-noev{text-align:center; color:var(--muted); font-size:.78rem; padding:14px 0;}
+  .md-cardnote{text-align:center; color:var(--muted); font-size:.64rem; padding:8px 0 2px; opacity:.8;}
   .md-hl{padding:4px 16px 14px; border-top:1px solid var(--line);}
   .md-hl-title{font-size:.72rem; font-weight:800; color:var(--muted); margin:8px 0; text-align:center;}
   .md-hl-thumb{
@@ -532,6 +631,7 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
 <body>
 
 <header>
+  <button class="info-btn" id="infoBtn" title="Donation · Холбоо барих">☕</button>
   <button class="theme-toggle" id="themeToggle" title="Өдөр/шөнийн горим">🌙</button>
   <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
   <nav class="nav">
@@ -1341,8 +1441,8 @@ const HIGHLIGHTS = {
   "Mexico|South Africa": "https://www.youtube.com/watch?v=PmevGCkUtM8",
   "South Korea|Czechia": "https://www.youtube.com/watch?v=6k18EJY8zIc",
   // 6-р сарын 13
-  "Canada|Bosnia and Herzegovina": "",
-  "USA|Paraguay": "",
+  "Canada|Bosnia and Herzegovina": "https://www.youtube.com/watch?v=w-_rY5morQY",
+  "USA|Paraguay": "https://www.youtube.com/watch?v=0PVo3bk-TMk",
   // 6-р сарын 14
   "Qatar|Switzerland": "",
   "Brazil|Morocco": "",
@@ -1468,9 +1568,16 @@ function parseScorers(raw){
 }
 
 function evRow(e){
-  const tag = e.og ? '<span class="md-tag">OG</span>'
-            : e.pen ? '<span class="md-tag">PEN</span>' : "";
-  const cell = `<span class="md-goal">⚽ ${e.name}${tag ? " " + tag : ""}</span>`;
+  let icon, extra = "";
+  if (e.kind === "yellow") icon = "🟨";
+  else if (e.kind === "red") icon = "🟥";
+  else if (e.kind === "sub") icon = "🔄";
+  else {                                   // goal
+    icon = "⚽";
+    const tag = e.og ? "OG" : e.pen ? "PEN" : "";
+    if (tag) extra = ` <span class="md-tag">${tag}</span>`;
+  }
+  const cell = `<span class="md-goal">${icon} ${e.name}${extra}</span>`;
   return `<div class="md-ev">
       <div class="md-ev-l">${e.side === "L" ? cell : ""}</div>
       <div class="md-ev-m">${e.min}</div>
@@ -1485,6 +1592,82 @@ function ytId(s){
   if (/^[\w-]{11}$/.test(s)) return s;               // already a bare 11-char id
   const m = s.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
   return m ? m[1] : "";
+}
+
+// ===== Cards (yellow/red) from ESPN's open WC API — CORS-friendly, no key =====
+const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const ESPN_BY_PAIR = {};        // "ABBR|ABBR"(sorted) -> {id, homeId, homeAbbr, awayId, awayAbbr}
+const espnCards = {};           // eventId -> array of cards | "pending" | "error"
+const ESPN_IDX_KEY = "wc26_espn_idx_v1";
+
+function buildEspnIndex(data){
+  (data.events || []).forEach(ev => {
+    const c = ev.competitions && ev.competitions[0];
+    if (!c) return;
+    const home = c.competitors.find(x => x.homeAway === "home");
+    const away = c.competitors.find(x => x.homeAway === "away");
+    if (!home || !away) return;
+    const ha = home.team.abbreviation, aa = away.team.abbreviation;
+    ESPN_BY_PAIR[[ha, aa].sort().join("|")] = {
+      id: ev.id,
+      homeId: String(home.team.id), homeAbbr: ha,
+      awayId: String(away.team.id), awayAbbr: aa
+    };
+  });
+}
+async function loadEspnIndex(){
+  try {
+    const cached = JSON.parse(localStorage.getItem(ESPN_IDX_KEY) || "null");
+    if (cached) Object.assign(ESPN_BY_PAIR, cached);   // paint-from-cache for instant lookups
+  } catch (e) {}
+  try {
+    const res = await fetch(`${ESPN}/scoreboard?dates=20260611-20260720&limit=400`);
+    if (!res.ok) return;
+    buildEspnIndex(await res.json());
+    try { localStorage.setItem(ESPN_IDX_KEY, JSON.stringify(ESPN_BY_PAIR)); } catch (e) {}
+  } catch (err) { /* offline / blocked — cards just won't show */ }
+}
+function parseEspnCards(data){
+  const out = [];
+  (data.keyEvents || []).forEach(e => {
+    const tp = (e.type && e.type.type) || "";
+    // tp is e.g. "yellow-card", "red-card", "yellow-red-card", "var---red-card-upgrade"
+    let kind = null;
+    if (/red-card/.test(tp)) kind = "red";          // straight red, second yellow, or VAR upgrade
+    else if (/yellow-card/.test(tp)) kind = "yellow";
+    if (!kind) return;
+    out.push({
+      kind,
+      name: (e.participants && e.participants[0] && e.participants[0].athlete &&
+             e.participants[0].athlete.displayName) || "",
+      min: (e.clock && e.clock.displayValue) || "",
+      minSort: (e.clock && typeof e.clock.value === "number") ? e.clock.value / 60 : 999,
+      teamId: (e.team && String(e.team.id)) || ""
+    });
+  });
+  return out;
+}
+const espnEntry = (a, b) => (FIFA[a] && FIFA[b]) ? ESPN_BY_PAIR[[FIFA[a], FIFA[b]].sort().join("|")] : null;
+async function fetchEspnCards(entry){
+  if (Array.isArray(espnCards[entry.id])) return espnCards[entry.id];
+  espnCards[entry.id] = "pending";
+  try {
+    const res = await fetch(`${ESPN}/summary?event=${entry.id}`);
+    if (!res.ok) throw 0;
+    espnCards[entry.id] = parseEspnCards(await res.json());
+  } catch (err) { espnCards[entry.id] = "error"; }
+  return espnCards[entry.id];
+}
+// cards for a match, with each placed on the L/R side matching the card layout
+function espnCardsFor(a, b){
+  const entry = espnEntry(a, b);
+  if (!entry) return null;
+  const cs = espnCards[entry.id];
+  if (!Array.isArray(cs)) return cs;   // undefined | "pending" | "error"
+  return cs.map(c => {
+    const code = c.teamId === entry.homeId ? entry.homeAbbr : entry.awayAbbr;
+    return { ...c, side: code === FIFA[a] ? "L" : "R" };
+  });
 }
 
 function showMatchDetail(card){
@@ -1508,12 +1691,29 @@ function showMatchDetail(card){
       statusHTML = live
         ? `<span class="md-status live">● Шууд</span>`
         : `<span class="md-status">Дууссан</span>`;
-      const events = parseScorers(g.home_scorers).map(e => ({ ...e, side: homeIsA ? "L" : "R" }))
-        .concat(parseScorers(g.away_scorers).map(e => ({ ...e, side: homeIsA ? "R" : "L" })))
-        .sort((x, y) => x.minSort - y.minSort);
-      evHTML = events.length
-        ? events.map(evRow).join("")
-        : `<div class="md-noev">⚽ Гоол ороогүй</div>`;
+      const goals = parseScorers(g.home_scorers).map(e => ({ ...e, kind: "goal", side: homeIsA ? "L" : "R" }))
+        .concat(parseScorers(g.away_scorers).map(e => ({ ...e, kind: "goal", side: homeIsA ? "R" : "L" })));
+      // merge ESPN cards with goals into one chronological timeline; cards load lazily
+      const paintTimeline = () => {
+        const cl = espnCardsFor(a, b);
+        const merged = (Array.isArray(cl) ? goals.concat(cl) : goals.slice())
+          .sort((x, y) => x.minSort - y.minSort);
+        let html = merged.length
+          ? merged.map(evRow).join("")
+          : `<div class="md-noev">⚽ Гоол ороогүй</div>`;
+        if (cl === "pending" || (espnEntry(a, b) && cl === undefined))
+          html += `<div class="md-cardnote">Карт ачааллаж байна…</div>`;
+        return html;
+      };
+      evHTML = paintTimeline();
+      const entry = espnEntry(a, b);
+      if (entry && !Array.isArray(espnCards[entry.id])) {
+        fetchEspnCards(entry).then(() => {
+          if (mdOverlay.dataset.pair !== card.dataset.teams) return;  // user moved on
+          const box = mdContent.querySelector(".md-events");
+          if (box) box.innerHTML = paintTimeline();
+        });
+      }
       // highlights: only show when a clip id is provided for this match
       const vid = ytId(HIGHLIGHTS[card.dataset.teams]);
       if (vid) {
@@ -1549,6 +1749,7 @@ function showMatchDetail(card){
      <div class="md-events">${evHTML}</div>
      ${hlHTML}
      ${footHTML}`;
+  mdOverlay.dataset.pair = card.dataset.teams;
   mdOverlay.classList.add("open");
 }
 function closeMatchDetail(){ mdOverlay.classList.remove("open"); }
@@ -1563,6 +1764,8 @@ cards.forEach(card => {
 mdOverlay.addEventListener("click", e => { if (e.target === mdOverlay) closeMatchDetail(); });
 mdOverlay.querySelector("#mdClose").addEventListener("click", closeMatchDetail);
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMatchDetail(); });
+
+loadEspnIndex();   // build the ESPN event map so match popups can show cards
 </script>
 
 <!-- ===== Floating AI chatbot button + popup ===== -->
@@ -1599,13 +1802,56 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeMatchDe
   }
   #chatPanel iframe{flex:1; width:100%; border:none; background:var(--bg,#f6f7f9);}
   @media(max-width:560px){
-    #chatFab{bottom:calc(82px + env(safe-area-inset-bottom));}
+    #chatFab{
+      bottom:calc(82px + env(safe-area-inset-bottom));
+      padding:7px 14px; font-size:.78rem; gap:0;
+    }
+    #chatFab .ico{display:none;}
     #chatPanel{
       bottom:calc(136px + env(safe-area-inset-bottom));
       height:min(560px, calc(100dvh - 200px));
     }
   }
 </style>
+<footer class="site-footer">
+  <div class="foot-inner">
+    <button class="foot-link" id="footDonate">☕ Donation</button>
+    <span class="foot-copy">© 2026 · Хөлбөмбөгийн ДАШТ хуваарь</span>
+  </div>
+</footer>
+
+<div id="aboutOverlay" role="dialog" aria-modal="true" aria-label="Тухай">
+  <div id="aboutSheet">
+    <button id="aboutClose" title="Хаах">✕</button>
+    <div class="about-icon">⚽</div>
+    <h2>Хөлбөмбөгийн ДАШТ-2026</h2>
+    <p class="about-desc">
+      2026 оны Дэлхийн аварга шалгаруулах тэмцээний бүх тоглолтын хуваарь, телевизийн сувгийн мэдээлэл,
+      хэсгийн байр, статистикийг хүргэдэг веб.
+    </p>
+
+    <div class="donate-head">
+      <span class="d-title">✉️ Холбоо барих</span>
+    </div>
+    <a class="copy-acct" href="mailto:ariunbat_cs@yahoo.com">
+      <span class="acct-num">ariunbat_cs@yahoo.com</span>
+    </a>
+
+    <div class="donate-head">
+      <span class="d-title">☕ Donation</span>
+      <span class="d-sub">ХХБ · Ариунбат</span>
+    </div>
+    <button class="copy-acct" id="copyAcct" data-acct="MN420004000466063833" title="Хуулах">
+      <span class="acct-num">MN42 0004 0004 6606 3833</span>
+      <span class="acct-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      </span>
+    </button>
+
+    <p class="about-note">AI чат ботын талаар мэдээлэл авахыг хүсвэл <a href="https://www.mongolgpt.mn/" target="_blank" rel="noopener" style="color:var(--accent); font-weight:700;">mongolgpt.mn</a> сайтаас мэдээлэл авна уу.</p>
+  </div>
+</div>
+
 <button id="chatFab" title="AI Чатбот"><span class="ico">🤖</span>AI Чатбот</button>
 <div id="chatPanel" role="dialog" aria-label="AI Чатбот">
   <div class="bar"><span>🤖 MongolGPT — ДАШТ 2026</span><button id="chatClose" title="Хаах">✕</button></div>
@@ -1627,6 +1873,43 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeMatchDe
   });
   document.getElementById("chatClose").addEventListener("click", () =>
     panel.classList.remove("open"));
+})();
+
+// ===== About / contact / donate modal =====
+(() => {
+  const overlay = document.getElementById("aboutOverlay");
+  const open  = () => overlay.classList.add("open");
+  const close = () => overlay.classList.remove("open");
+  ["infoBtn", "footDonate"].forEach(id =>
+    document.getElementById(id)?.addEventListener("click", open));
+  document.getElementById("aboutClose").addEventListener("click", close);
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && overlay.classList.contains("open")) close();
+  });
+  // copy bank account number to clipboard
+  const copyBtn = document.getElementById("copyAcct");
+  if (copyBtn) {
+    const ico = copyBtn.querySelector(".acct-ico");
+    const copySvg = ico.innerHTML;
+    const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    copyBtn.addEventListener("click", async () => {
+      const acct = copyBtn.dataset.acct;
+      try {
+        await navigator.clipboard.writeText(acct);
+      } catch (err) {
+        const t = document.createElement("textarea");
+        t.value = acct; document.body.appendChild(t); t.select();
+        document.execCommand("copy"); t.remove();
+      }
+      copyBtn.classList.add("copied");
+      ico.innerHTML = checkSvg;
+      setTimeout(() => {
+        copyBtn.classList.remove("copied");
+        ico.innerHTML = copySvg;
+      }, 1500);
+    });
+  }
 })();
 </script>
 <script data-goatcounter="https://fifa26schedule.goatcounter.com/count"

@@ -40,12 +40,14 @@
       "#pwaInstall .pwa-x:hover{opacity:1;}" +
       "@keyframes pwaIn{from{opacity:0;transform:translate(-50%,14px);}" +
       "to{opacity:1;transform:translate(-50%,0);}}" +
+      "@keyframes pwaUp{from{opacity:0;transform:translateY(22px);}" +
+      "to{opacity:1;transform:translateY(0);}}" +
       "@media(max-width:560px){.tabbar~#pwaInstall,#pwaInstall{bottom:74px;}}" +
       ".pwa-ios-sheet{position:fixed;inset:0;z-index:10000;display:flex;" +
       "align-items:flex-end;justify-content:center;background:rgba(8,16,12,.55);}" +
       ".pwa-ios-card{background:#fff;color:#15241c;border-radius:16px 16px 0 0;" +
       "width:100%;max-width:460px;padding:20px 22px 28px;" +
-      "font:400 .92rem 'Segoe UI',system-ui,sans-serif;animation:pwaIn .3s ease both;}" +
+      "font:400 .92rem 'Segoe UI',system-ui,sans-serif;animation:pwaUp .3s ease both;}" +
       "html.dark .pwa-ios-card{background:#16201a;color:#e7ede8;}" +
       ".pwa-ios-card h3{font-size:1.05rem;margin:0 0 10px;}" +
       ".pwa-ios-card ol{margin:0;padding-left:20px;line-height:1.7;}" +
@@ -82,10 +84,11 @@
     sheet.className = "pwa-ios-sheet";
     sheet.innerHTML =
       "<div class='pwa-ios-card'>" +
-      "<h3>📲 Нүүр дэлгэцэд нэмэх</h3>" +
-      "<ol><li>Доорх <b>Хуваалцах</b> ⎙ товчийг дарна</li>" +
-      "<li><b>“Нүүр дэлгэцэд нэмэх”</b> сонголтыг дарна</li>" +
-      "<li><b>“Нэмэх”</b> дарж баталгаажуулна</li></ol>" +
+      "<h3>📲 App болгох</h3>" +
+      "<ol><li>Доорх <b>•••</b> товчийг дарна</li>" +
+      "<li>Цэснээс <b>Share</b> товчийг дарна</li>" +
+      "<li><b>“Add to Home Screen”</b> сонголтыг дарна</li>" +
+      "<li><b>“Add”</b> дарж баталгаажуулна</li></ol>" +
       "<button type='button'>Ойлголоо</button></div>";
     sheet.addEventListener("click", function (e) {
       if (e.target === sheet || e.target.tagName === "BUTTON") sheet.remove();
