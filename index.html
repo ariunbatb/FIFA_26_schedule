@@ -25,20 +25,18 @@
 <meta name="twitter:title" content="Хөлбөмбөгийн ДАШТ 2026 — Тоглолтын хуваарь">
 <meta name="twitter:description" content="Бүх тоглолтын хуваарь, тв суваг, хэсгийн байр.">
 <meta name="twitter:image" content="https://fifa-26-schedule.vercel.app/og-image.png">
-<link rel="preconnect" href="https://worldcup26.ir" crossorigin>
+<link rel="preconnect" href="https://site.api.espn.com" crossorigin>
+<link rel="preconnect" href="https://site.web.api.espn.com" crossorigin>
 <script>
 // Kick off score API calls immediately so they download while the page renders.
-const API = "https://worldcup26.ir";
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI"; // register once: POST /auth/register
-window.__scoreFetch = (() => {
-  if (TOKEN.startsWith("PASTE")) return null;
-  const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
-  return Promise.all([
-    fetch(API + "/get/teams", opts),
-    fetch(API + "/get/games", opts),
-    fetch(API + "/get/groups", opts)
-  ]).catch(err => err); // never an unhandled rejection; loadScores re-checks
-})();
+// Source: ESPN's public WC API (CORS-open, key-less). It replaces worldcup26.ir,
+// which went offline. scoreboard = scores + live/finished status; standings = group tables.
+const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const ESPN_WEB = "https://site.web.api.espn.com/apis/v2/sports/soccer/fifa.world";
+window.__scoreFetch = Promise.all([
+  fetch(`${ESPN}/scoreboard?dates=20260611-20260720&limit=400`),
+  fetch(`${ESPN_WEB}/standings?season=2026`)
+]).catch(err => err); // never an unhandled rejection; loadScores re-checks
 </script>
 <script>
 // Apply saved theme before first paint to avoid a light-mode flash.
@@ -136,6 +134,18 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     padding-left:10px; border-left:4px solid var(--gold);
   }
   .day-header .rule{flex:1; height:1px; background:var(--line);}
+  /* in-feed ad slot (scrolls with content, spans the grid but stays a sane size) */
+  .ad-slot{
+    grid-column:1 / -1;
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:10px; box-shadow:var(--shadow); overflow:hidden;
+    /* on desktop the grid is 2 columns and full-bleed is huge — cap + center the banner */
+    max-width:640px; margin-inline:auto;
+  }
+  .ad-slot a, .ad-slot img{display:block; width:100%;}
+  .ad-slot img{height:auto; border-radius:8px;}
+  /* single-column layout (mobile): let it fill the column */
+  @media(max-width:980px){.ad-slot{max-width:none;}}
   .stage-tag{
     font-size:.62rem; font-weight:700; letter-spacing:.5px;
     color:#fff; background:var(--accent2); border-radius:99px; padding:2px 9px;
@@ -297,7 +307,11 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   #gpop tr:last-child td{border-bottom:none;}
   #gpop td.pos{color:var(--muted); font-weight:700; width:14px;}
   #gpop td.tm{text-align:left;}
-  #gpop td.tm span{display:inline-flex; align-items:center; gap:5px; font-weight:600; white-space:nowrap;}
+  #gpop td.tm .gp-team{display:inline-flex; align-items:center; gap:5px; font-weight:600; white-space:nowrap;}
+  #gpop .gp-team{text-decoration:none; color:inherit;}
+  #gpop a.gp-team-link:hover{color:var(--accent); text-decoration:underline;}
+  html.dark #gpop a.gp-team-link:hover{color:#4ade80;}
+  #gpop .gp-row a.gp-team-link{display:inline-flex; align-items:center; gap:5px;}
   #gpop td.tm img{width:18px; height:12px; object-fit:cover; border-radius:2px; border:1px solid var(--line);}
   #gpop td.pts{font-weight:900; color:var(--accent);}
   #gpop tr.q td{background:var(--hl);}
@@ -544,6 +558,11 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   }
   .md-team{display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;}
   .md-team span{font-weight:700; font-size:.86rem;}
+  a.md-team-link{text-decoration:none; color:inherit; border-radius:10px; padding:4px 6px; transition:background .15s;}
+  a.md-team-link:hover{background:rgba(14,122,77,.10);}
+  a.md-team-link:hover span{color:var(--accent); text-decoration:underline;}
+  html.dark a.md-team-link:hover{background:#173a2a;}
+  html.dark a.md-team-link:hover span{color:#4ade80;}
   .md-flag{
     width:62px; height:42px; object-fit:cover; border-radius:6px;
     border:1px solid var(--line); box-shadow:0 2px 8px rgba(0,0,0,.18);
@@ -971,11 +990,13 @@ M.forEach(m => {
 });
 
 const app = document.getElementById("app");
+const dayEls = [];
 byDate.forEach(day => {
   const ko = isKO(day.matches[0][5]);
   const el = document.createElement("div");
   el.className = "day";
   el.dataset.date = day.date;
+  dayEls.push(el);
   el.innerHTML = `
     <div class="day-header">
       <h2>${dateMN(day.date, true)}</h2><div class="rule"></div>
@@ -1000,20 +1021,40 @@ byDate.forEach(day => {
   app.appendChild(el);
 });
 
-// jump to today's section by default so there's no manual scrolling
-(() => {
-  if (location.hash === "#saved") return;
+// figure out the "current" day: first day on/after today (the one we auto-scroll to)
+const currentIdx = (() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const days = document.querySelectorAll(".day");
   for (let i = 0; i < byDate.length; i++) {
     // "Friday, June 12" -> Date for June 12, 2026
     const d = new Date(byDate[i].date.split(",")[1] + ", 2026");
-    if (d >= today) {
-      if (i > 0) days[i].scrollIntoView({ behavior: "smooth", block: "start" });
-      break;
-    }
+    if (d >= today) return i;
   }
+  return -1;
+})();
+
+// in-feed ad that rides along right below the current day's matches
+const AD = {
+  img: "images/telco.png",          // drop the banner image in the repo root under this name
+  href: "https://www.telcocom.mn",   // full URL with https:// (relative paths redirect within this site)
+  alt: "TelcoCom"
+};
+let adSlot = null;
+if (currentIdx >= 0 && AD.img) {
+  adSlot = document.createElement("div");
+  adSlot.className = "ad-slot";
+  const media = AD.href
+    ? `<a href="${AD.href}" target="_blank" rel="noopener"><img src="${AD.img}" alt="${AD.alt}" loading="lazy"></a>`
+    : `<img src="${AD.img}" alt="${AD.alt}" loading="lazy">`;
+  adSlot.innerHTML = media;
+  // place it directly after the current day's block
+  dayEls[currentIdx].after(adSlot);
+}
+
+// jump to today's section by default so there's no manual scrolling
+(() => {
+  if (location.hash === "#saved") return;
+  if (currentIdx > 0) dayEls[currentIdx].scrollIntoView({ behavior: "smooth", block: "start" });
 })();
 
 // ===== Dark mode toggle =====
@@ -1088,6 +1129,8 @@ function applyView(){
     day.classList.toggle("hidden", !any);
     if (any) anyVisible = true;
   });
+  // keep the in-feed ad in sync with its host day's visibility
+  if (adSlot) adSlot.classList.toggle("hidden", currentIdx < 0 || dayEls[currentIdx].classList.contains("hidden"));
   if (sv && savedSet.size === 0) {
     emptyMsg.textContent = "⭐ Хадгалсан тоглолт алга. Тоглолтын баруун дээд буланд байх ☆ товчийг дарж хадгална уу.";
     emptyMsg.style.display = "block";
@@ -1274,25 +1317,30 @@ const CODE_TO_NAME = {};
 Object.entries(FIFA).forEach(([name, code]) => { CODE_TO_NAME[code] = name; });
 const GROUP_STANDINGS = {};
 
-function applyGroups(teams, groups){
-  const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
-  const groupList = Array.isArray(groups) ? groups : groups.groups || groups.data || [];
-  const byId = {};
-  teamList.forEach(t => { byId[t.id] = t; });
+function applyGroups(standings){
+  const groupList = (standings && standings.children) || [];
   groupList.forEach(g => {
-    const rows = (g.teams || []).map(s => {
-      const info = byId[s.team_id] || {};
-      const name = CODE_TO_NAME[info.fifa_code]; // our canonical English name
+    const letter = String(g.abbreviation || g.name || "").replace(/group/i, "").trim();
+    const entries = (g.standings && g.standings.entries) || [];
+    const rows = entries.map(e => {
+      const t = e.team || {};
+      const st = {};
+      (e.stats || []).forEach(s => { st[s.name] = s.value; });
+      const abbr = t.abbreviation;                 // ESPN abbr == our FIFA code
+      const name = CODE_TO_NAME[abbr];             // our canonical English name
       return {
-        label: name ? MN[name] : (info.name_en || "?"),
-        code: name ? CODE[name] : null,
-        flag: info.flag || "",
-        w:N(s.w), d:N(s.d), l:N(s.l), gf:N(s.gf), ga:N(s.ga), gd:N(s.gd), pts:N(s.pts),
-        mp: N(s.w) + N(s.d) + N(s.l)
+        label: name ? MN[name] : (t.displayName || "?"),
+        code: name ? CODE[name] : null,            // iso2 → flagcdn fallback in flagImg()
+        fifa: abbr || (name ? FIFA[name] : null),
+        en: name || t.displayName || "",
+        flag: "",
+        w:N(st.wins), d:N(st.ties), l:N(st.losses),
+        gf:N(st.pointsFor), ga:N(st.pointsAgainst), gd:N(st.pointDifferential),
+        pts:N(st.points), mp:N(st.gamesPlayed)
       };
     }).sort((x, y) =>
       y.pts - x.pts || y.gd - x.gd || y.gf - x.gf || x.label.localeCompare(y.label, "mn"));
-    if (rows.length) GROUP_STANDINGS[g.name] = rows;
+    if (rows.length && letter) GROUP_STANDINGS[letter] = rows;
   });
   // refresh the popover if it's currently open on a group we just got data for
   if (gpop.style.display === "block" && gpop.dataset.g) showGPop(null, gpop.dataset.g);
@@ -1306,6 +1354,12 @@ function flagImg(row){
   const src = row.flag || (row.code ? `https://flagcdn.com/w40/${row.code}.png` : "");
   return src ? `<img src="${src}" alt="" loading="lazy">` : "";
 }
+// wrap a group-row's team content in a link to its team page (plain span if code unknown)
+function teamCellLink(fifa, en, inner){
+  if (!fifa) return `<span class="gp-team">${inner}</span>`;
+  const href = `team.html?code=${encodeURIComponent(fifa)}&name=${encodeURIComponent(en || "")}`;
+  return `<a class="gp-team gp-team-link" href="${href}">${inner}</a>`;
+}
 
 function showGPop(el, g){
   const st = GROUP_STANDINGS[g];
@@ -1314,7 +1368,7 @@ function showGPop(el, g){
     const rows = st.map((s, i) => `
       <tr class="${i < 2 ? "q" : ""}">
         <td class="pos">${i + 1}</td>
-        <td class="tm"><span>${flagImg(s)}${s.label}</span></td>
+        <td class="tm">${teamCellLink(s.fifa, s.en, `${flagImg(s)}${s.label}`)}</td>
         <td>${s.mp}</td>
         <td>${s.gd > 0 ? "+" : ""}${s.gd}</td>
         <td class="pts">${s.pts}</td>
@@ -1326,7 +1380,8 @@ function showGPop(el, g){
       </tr></thead><tbody>${rows}</tbody></table>`;
   } else {
     const teams = GROUP_TEAMS[g] || [];
-    body = teams.map(n => `<div class="gp-row">${miniFlag(n)} ${MN[n]}</div>`).join("");
+    body = teams.map(n =>
+      `<div class="gp-row">${teamCellLink(FIFA[n], n, `${miniFlag(n)} ${MN[n]}`)}</div>`).join("");
   }
   gpop.dataset.g = g;
   gpop.innerHTML =
@@ -1355,31 +1410,18 @@ document.addEventListener("click", e => {
 window.addEventListener("scroll", hideGPop, true);
 window.addEventListener("resize", hideGPop);
 
-// ===== Match results from worldcup26.ir API =====
-// API + TOKEN are declared in <head>, where the requests are already in flight.
-const SCORE_CACHE_KEY = "wc26_scores_v1";
+// ===== Match results from ESPN's scoreboard API =====
+// ESPN is declared in <head>, where the requests are already in flight.
+const SCORE_CACHE_KEY = "wc26_scores_v2";
 // cards the API reports as in-progress — these stay LIVE regardless of the clock
 const liveCards = new Set();
-// raw API game keyed by "CODE|CODE" (sorted) + team-id→fifa-code map — read by the match-detail modal
+// normalized game keyed by "ABBR|ABBR" (sorted) — read by the match-detail modal.
+// ESPN team abbreviations are identical to our FIFA[] codes.
 const GAME_BY_PAIR = {};
-let API_ID_TO_CODE = {};
 
-function applyScores(teams, games){
-  // API wraps lists in an object: {teams:[...]}, {games:[...]}
-  const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
-  const gameList = Array.isArray(games) ? games : games.games || games.data || [];
-
-  // map API team id -> fifa_code
-  const idToCode = {};
-  teamList.forEach(t => {
-    idToCode[t.id] = t.fifa_code;
-  });
-  API_ID_TO_CODE = idToCode;
-  // expose every game (started or not) keyed by sorted fifa-code pair, for the detail modal
-  gameList.forEach(g => {
-    const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
-    if (hc && ac) GAME_BY_PAIR[[hc, ac].sort().join("|")] = g;
-  });
+function applyScores(sb){
+  const events = (sb && sb.events) || [];
+  buildEspnIndex(sb);   // same scoreboard feeds the match-detail card/lineup lookups
   // map our English name -> fifa code, then build "CODE|CODE" -> card lookup
   const cardByPair = {};
   cards.forEach(card => {
@@ -1389,19 +1431,29 @@ function applyScores(teams, games){
     }
   });
 
-  gameList.forEach(g => {
-    const finished = String(g.finished).toUpperCase() === "TRUE";
-    const live = String(g.time_elapsed).toLowerCase() === "live";
-    if (!finished && !live) return; // skip not-yet-started matches (no score to show)
-    const hc = idToCode[g.home_team_id], ac = idToCode[g.away_team_id];
-    if (!hc || !ac) return;
+  events.forEach(ev => {
+    const c = ev.competitions && ev.competitions[0];
+    if (!c || !c.competitors) return;
+    const home = c.competitors.find(x => x.homeAway === "home");
+    const away = c.competitors.find(x => x.homeAway === "away");
+    if (!home || !away) return;
+    const hc = home.team.abbreviation, ac = away.team.abbreviation;
+    const state = (ev.status && ev.status.type && ev.status.type.state) || ""; // pre|in|post
+    // expose every game (started or not) keyed by sorted abbr pair, for the detail modal
+    const game = {
+      id: ev.id, homeAbbr: hc, awayAbbr: ac,
+      homeScore: home.score, awayScore: away.score,
+      finished: state === "post", live: state === "in"
+    };
+    GAME_BY_PAIR[[hc, ac].sort().join("|")] = game;
+    if (!game.finished && !game.live) return; // skip not-yet-started matches (no score to show)
     const card = cardByPair[[hc, ac].sort().join("|")];
     if (!card) return;
     // show real score in home-away order matching the card's layout
     const [cardA] = card.dataset.teams.split("|");
     const flip = FIFA[cardA] !== hc;
-    const s1 = flip ? g.away_score : g.home_score;
-    const s2 = flip ? g.home_score : g.away_score;
+    const s1 = flip ? game.awayScore : game.homeScore;
+    const s2 = flip ? game.homeScore : game.awayScore;
     const score = card.querySelector(".score");
     if (score) { // already painted from cache — just refresh the numbers
       score.textContent = `${s1} : ${s2}`;
@@ -1410,7 +1462,7 @@ function applyScores(teams, games){
       if (!vs) return;
       vs.outerHTML = `<span class="score">${s1} : ${s2}</span>`;
     }
-    if (finished) {            // full time: lock the score, drop the LIVE badge
+    if (game.finished) {       // full time: lock the score, drop the LIVE badge
       card.classList.add("done");
       liveCards.delete(card);
     } else {                   // in progress: keep score updating + LIVE badge on
@@ -1458,20 +1510,19 @@ async function loadScores(){
   try {
     const cached = JSON.parse(localStorage.getItem(SCORE_CACHE_KEY) || "null");
     if (cached) {
-      applyScores(cached.teams, cached.games);
-      if (cached.groups) applyGroups(cached.teams, cached.groups);
+      if (cached.scoreboard) applyScores(cached.scoreboard);
+      if (cached.standings) applyGroups(cached.standings);
     }
   } catch (err) { /* bad cache — network result below overwrites it */ }
   // 2) refresh from the network (requests started in <head>)
   try {
-    const [teamsRes, gamesRes, groupsRes] = await window.__scoreFetch;
-    if (!teamsRes.ok || !gamesRes.ok) throw new Error("API error " + teamsRes.status + "/" + gamesRes.status);
-    const teams = await teamsRes.json();
-    const games = await gamesRes.json();
-    applyScores(teams, games);
-    let groups = null;
-    if (groupsRes && groupsRes.ok) { groups = await groupsRes.json(); applyGroups(teams, groups); }
-    try { localStorage.setItem(SCORE_CACHE_KEY, JSON.stringify({ teams, games, groups })); } catch (err) {}
+    const [sbRes, stRes] = await window.__scoreFetch;
+    if (!sbRes || !sbRes.ok) throw new Error("ESPN scoreboard error " + (sbRes && sbRes.status));
+    const scoreboard = await sbRes.json();
+    applyScores(scoreboard);
+    let standings = null;
+    if (stRes && stRes.ok) { standings = await stRes.json(); applyGroups(standings); }
+    try { localStorage.setItem(SCORE_CACHE_KEY, JSON.stringify({ scoreboard, standings })); } catch (err) {}
   } catch (err) {
     console.warn("Score load failed:", err); // page still works without scores
   }
@@ -1600,28 +1651,12 @@ function mdFlag(t){
          onerror="this.outerHTML='&lt;span class=\\'md-flag ph\\'&gt;${t.emoji}&lt;/span&gt;'">`
     : `<span class="md-flag ph">${t.emoji}</span>`;
 }
-
-// '{"F. Balogun 31'","D. Bobadilla 7'(OG)"}' -> [{name, min, minSort, og, pen}]
-function parseScorers(raw){
-  if (!raw || raw === "null") return [];
-  const inner = String(raw)
-    .replace(/^\s*\{/, "").replace(/\}\s*$/, "")
-    .replace(/[“”„‟]/g, '"');                       // normalise smart quotes
-  return inner.split(/"\s*,\s*"/)
-    .map(s => s.replace(/^"|"$/g, "").trim())
-    .filter(Boolean)
-    .map(p => {
-      const m = p.match(/^(.*?)(\d+'(?:\+\d+')?)\s*\(?(OG|PEN|PK|P)?\)?\s*$/);
-      if (!m) return { name: p, min: "", minSort: 999, og:false, pen:false };
-      const mm = m[2].match(/(\d+)'(?:\+(\d+))?/);
-      return {
-        name: m[1].trim(),
-        min: m[2],
-        minSort: mm ? parseInt(mm[1],10) + (mm[2] ? parseInt(mm[2],10)/100 : 0) : 999,
-        og: m[3] === "OG",
-        pen: m[3] === "PEN" || m[3] === "PK" || m[3] === "P"
-      };
-    });
+// team header in the match popup — links to the team page (unless TBD)
+function teamLink(name, flagHTML, label){
+  if (name === "TBD" || !FIFA[name])
+    return `<div class="md-team">${flagHTML}<span>${label}</span></div>`;
+  const href = `team.html?code=${encodeURIComponent(FIFA[name])}&name=${encodeURIComponent(name)}`;
+  return `<a class="md-team md-team-link" href="${href}">${flagHTML}<span>${label}</span></a>`;
 }
 
 function evRow(e){
@@ -1651,12 +1686,11 @@ function ytId(s){
   return m ? m[1] : "";
 }
 
-// ===== Cards (yellow/red) from ESPN's open WC API — CORS-friendly, no key =====
-const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+// ===== Goals + cards + lineups from ESPN's open WC API — CORS-friendly, no key =====
+// (ESPN base URL is declared in <head>, where the scoreboard fetch is already in flight)
 const ESPN_BY_PAIR = {};        // "ABBR|ABBR"(sorted) -> {id, homeId, homeAbbr, awayId, awayAbbr}
 const espnCards = {};           // eventId -> array of cards | "pending" | "error"
 const espnLineups = {};         // eventId -> {home,away} | "pending" | "error" | null
-const ESPN_IDX_KEY = "wc26_espn_idx_v1";
 
 // "Alistair Johnston" -> "A. Johnston"
 function shortName(n){
@@ -1699,37 +1733,30 @@ function buildEspnIndex(data){
     };
   });
 }
-async function loadEspnIndex(){
-  try {
-    const cached = JSON.parse(localStorage.getItem(ESPN_IDX_KEY) || "null");
-    if (cached) Object.assign(ESPN_BY_PAIR, cached);   // paint-from-cache for instant lookups
-  } catch (e) {}
-  try {
-    const res = await fetch(`${ESPN}/scoreboard?dates=20260611-20260720&limit=400`);
-    if (!res.ok) return;
-    buildEspnIndex(await res.json());
-    try { localStorage.setItem(ESPN_IDX_KEY, JSON.stringify(ESPN_BY_PAIR)); } catch (e) {}
-  } catch (err) { /* offline / blocked — cards just won't show */ }
-}
-// cards + substitutions from keyEvents, ready to merge into the timeline
+// goals + cards + substitutions from keyEvents, ready to merge into the timeline
 function parseEspnCards(data){
   const out = [];
   const pname = (e, i) => (e.participants && e.participants[i] && e.participants[i].athlete &&
                            e.participants[i].athlete.displayName) || "";
   (data.keyEvents || []).forEach(e => {
     const tp = (e.type && e.type.type) || "";
-    // tp is e.g. "yellow-card", "red-card", "yellow-red-card", "var---red-card-upgrade", "substitution"
-    let kind = null, name = "";
-    if (/red-card/.test(tp)) { kind = "red"; name = shortName(pname(e, 0)); }      // straight red, 2nd yellow, VAR upgrade
+    // tp is e.g. "goal", "goal---header", "penalty---scored", "own-goal",
+    // "yellow-card", "red-card", "var---red-card-upgrade", "substitution"
+    let kind = null, name = "", og = false, pen = false;
+    if (e.scoringPlay === true) {                                                  // any goal — ESPN attributes own-goals to the benefiting team
+      kind = "goal"; name = shortName(pname(e, 0));
+      og = /own/.test(tp); pen = /penalt/.test(tp);
+    }
+    else if (/red-card/.test(tp)) { kind = "red"; name = shortName(pname(e, 0)); } // straight red, 2nd yellow, VAR upgrade
     else if (/yellow-card/.test(tp)) { kind = "yellow"; name = shortName(pname(e, 0)); }
-    else if (tp === "substitution") {                                              // [0]=in, [1]=out
+    else if (tp === "substitution") {                                             // [0]=in, [1]=out
       kind = "sub";
       name = `<span class="md-subtxt"><span class="md-subin">${shortName(pname(e, 0))}</span> ` +
              `<span class="md-subout">⇄ ${shortName(pname(e, 1))}</span></span>`;
     }
     if (!kind) return;
     out.push({
-      kind, name,
+      kind, name, og, pen,
       min: (e.clock && e.clock.displayValue) || "",
       minSort: (e.clock && typeof e.clock.value === "number") ? e.clock.value / 60 : 999,
       teamId: (e.team && String(e.team.id)) || ""
@@ -1831,24 +1858,23 @@ function showMatchDetail(card){
   let scoreHTML = `<span class="vsbig">VS</span>`, statusHTML = "", evHTML = "", hlHTML = "", luBodyHTML = "", subsBodyHTML = "";
   let started = false;
   if (g) {
-    const finished = String(g.finished).toUpperCase() === "TRUE";
-    const live = String(g.time_elapsed).toLowerCase() === "live";
+    const finished = !!g.finished;
+    const live = !!g.live;
     if (finished || live) {
       started = true;
-      const homeIsA = FIFA[a] === API_ID_TO_CODE[g.home_team_id];
-      const s1 = homeIsA ? g.home_score : g.away_score;
-      const s2 = homeIsA ? g.away_score : g.home_score;
+      const homeIsA = FIFA[a] === g.homeAbbr;
+      const s1 = homeIsA ? g.homeScore : g.awayScore;
+      const s2 = homeIsA ? g.awayScore : g.homeScore;
       scoreHTML = `<span class="num">${s1} : ${s2}</span>`;
       statusHTML = live
         ? `<span class="md-status live">● Шууд</span>`
         : `<span class="md-status">Дууссан</span>`;
-      const goals = parseScorers(g.home_scorers).map(e => ({ ...e, kind: "goal", side: homeIsA ? "L" : "R" }))
-        .concat(parseScorers(g.away_scorers).map(e => ({ ...e, kind: "goal", side: homeIsA ? "R" : "L" })));
-      // timeline = goals + cards (subs live in their own tab); loads lazily
+      // timeline = goals + cards (subs live in their own tab); all from one ESPN
+      // summary fetch, so they load lazily together
       const paintTimeline = () => {
         const cl = espnCardsFor(a, b);
-        const cards = Array.isArray(cl) ? cl.filter(x => x.kind !== "sub") : [];
-        const merged = goals.concat(cards).sort((x, y) => x.minSort - y.minSort);
+        const merged = (Array.isArray(cl) ? cl.filter(x => x.kind !== "sub") : [])
+          .sort((x, y) => x.minSort - y.minSort);
         let html = merged.length
           ? merged.map(evRow).join("")
           : `<div class="md-noev">⚽ Гоол ороогүй</div>`;
@@ -1915,9 +1941,9 @@ function showMatchDetail(card){
   mdContent.innerHTML =
     `<div class="md-stage ${ko ? "ko" : ""}">${stageLabel(grp)}</div>
      <div class="md-head">
-       <div class="md-team">${mdFlag(tA)}<span>${tA.mn}</span></div>
+       ${teamLink(a, mdFlag(tA), tA.mn)}
        <div class="md-score">${scoreHTML}${statusHTML}</div>
-       <div class="md-team">${mdFlag(tB)}<span>${tB.mn}</span></div>
+       ${teamLink(b, mdFlag(tB), tB.mn)}
      </div>
      <div class="md-sub">${dateMN(d, true)} · ${t} (УБ цагаар)</div>
      ${started ? `
@@ -1961,8 +1987,6 @@ cards.forEach(card => {
 mdOverlay.addEventListener("click", e => { if (e.target === mdOverlay) closeMatchDetail(); });
 mdOverlay.querySelector("#mdClose").addEventListener("click", closeMatchDetail);
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeMatchDetail(); });
-
-loadEspnIndex();   // build the ESPN event map so match popups can show cards
 </script>
 
 <!-- ===== Floating AI chatbot button + popup ===== -->

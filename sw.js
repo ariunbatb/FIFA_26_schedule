@@ -1,8 +1,8 @@
 /* FIFA 2026 schedule — service worker
- * App-shell offline support. The live-score API (worldcup26.ir) is NEVER cached
+ * App-shell offline support. The live-score API (ESPN) is NEVER cached
  * so scores are always fresh when online.
  */
-const VERSION = "v1";
+const VERSION = "v3";
 const CACHE = "fifa26-" + VERSION;
 
 // Core files served from cache when offline.
@@ -13,7 +13,8 @@ const SHELL = [
   "./stats.html",
   "./manifest.webmanifest",
   "./pwa.js",
-  "./favicon.png"
+  "./favicon.png",
+  "./ad-telcocom.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -46,7 +47,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
 
   // Live scores / API: always go to the network, never cache.
-  if (url.hostname.endsWith("worldcup26.ir")) return;
+  if (url.hostname.endsWith("espn.com")) return;
 
   // Page navigations: network-first, fall back to cache (then index.html offline).
   if (req.mode === "navigate") {

@@ -345,8 +345,12 @@ const MN = {
   "Bosnia-Herzegovina":"Босни-Герцеговин","Congo DR":"Конго"
 };
 
-const API = "https://worldcup26.ir";
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI";
+// All stats come from ESPN's public WC API (CORS-open, key-less).
+// Replaces worldcup26.ir, which went offline. scoreboard = goals + cards;
+// standings = team attack/defense totals.
+const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const ESPN_WEB = "https://site.web.api.espn.com/apis/v2/sports/soccer/fifa.world";
+const ESPN_SB = `${ESPN}/scoreboard?dates=20260611-20260720&limit=400`;
 
 const N = v => parseInt(v, 10) || 0;
 const mnName = t => MN[t?.name_en] || t?.name_en || "?";
@@ -364,50 +368,35 @@ async function cachedJSON(key, ttlMs, fetcher){
 }
 const MIN = 60000, HOUR = 3600000;
 
-// worldcup26.ir teams are fetched once and shared by all loaders (flags + names)
-const teamsPromise = fetch(API + "/get/teams", { headers: { "Authorization": "Bearer " + TOKEN } })
-  .then(r => { if (!r.ok) throw new Error("teams " + r.status); return r.json(); })
-  .then(t => Array.isArray(t) ? t : t.teams || t.data || []);
+// One ESPN scoreboard call (whole tournament) feeds both top scorers and cards,
+// shared via the "espn_sb" cache key.
+const fetchSB = async () => {
+  const res = await fetch(ESPN_SB);
+  if (!res.ok) throw new Error("espn " + res.status);
+  return res.json();
+};
 
-// Scorer strings look like {"J. Quiñones 9'","R. Jiménez 67'"} — sometimes with
-// smart quotes (“ ” „) instead of ". Returns [{name, minute}].
-function parseScorers(raw){
-  if (!raw || raw === "null") return [];
-  const out = [];
-  const re = /["“”„']([^"“”„']+?)\s+(\d+(?:\+\d+)?)'?["“”„']/g;
-  let m;
-  while ((m = re.exec(raw)) !== null) out.push({name: m[1].trim(), minute: m[2]});
-  return out;
-}
-
-// Top scorers from worldcup26.ir games. TheSportsDB has no top-scorer endpoint and
-// its timelines miss goals, so this stays the source of truth. The endpoint is slow,
-// so it loads independently of the rest of the page and is cached for 10 minutes.
+// Top scorers from ESPN's scoreboard: each finished/live match lists its goal
+// events inline (details[] with scoringPlay). Own goals are excluded.
 async function loadScorers(){
   const body = document.getElementById("scorers");
   try {
-    const [teamList, games] = await Promise.all([
-      teamsPromise,
-      cachedJSON("wc_games", 10 * MIN, async () => {
-        const r = await fetch(API + "/get/games", { headers: { "Authorization": "Bearer " + TOKEN } });
-        if (!r.ok) throw new Error("games " + r.status);
-        return r.json();
-      })
-    ]);
-    const gameList = Array.isArray(games) ? games : games.games || games.data || [];
-    const byId = {};
-    teamList.forEach(t => { byId[t.id] = t; });
+    const data = await cachedJSON("espn_sb", 10 * MIN, fetchSB);
 
-    const players = {}; // "name|teamId" -> {name, team, goals, minutes[]}
-    gameList.forEach(g => {
-      if (String(g.finished).toUpperCase() !== "TRUE") return;
-      [[g.home_scorers, g.home_team_id], [g.away_scorers, g.away_team_id]].forEach(([raw, teamId]) => {
-        parseScorers(raw).forEach(s => {
-          const p = (players[s.name + "|" + teamId] ||=
-            {name: s.name, team: byId[teamId], goals: 0, minutes: []});
-          p.goals++;
-          p.minutes.push(s.minute + "'");
-        });
+    const players = {}; // "name|teamId" -> {name, team:{name_en,flag}, goals}
+    (data.events || []).forEach(ev => {
+      const comp = ev.competitions && ev.competitions[0];
+      if (!comp || ev.status?.type?.state === "pre") return;
+      const teams = {};
+      (comp.competitors || []).forEach(c => { teams[c.team.id] = c.team; });
+      (comp.details || []).forEach(x => {
+        if (!x.scoringPlay || x.ownGoal) return;        // goals only, skip own goals
+        const name = x.athletesInvolved?.[0]?.displayName;
+        if (!name) return;
+        const t = teams[x.team?.id] || {};
+        const p = (players[name + "|" + x.team?.id] ||=
+          {name, team: {name_en: t.displayName, flag: t.logo}, goals: 0});
+        p.goals++;
       });
     });
     const top = Object.values(players)
@@ -431,24 +420,25 @@ async function loadScorers(){
 async function loadStats(){
   const status = document.getElementById("status");
   try {
-    const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
-    const [teamList, groupsRes] = await Promise.all([
-      teamsPromise,
-      fetch(API + "/get/groups", opts)
-    ]);
-    if (!groupsRes.ok) throw new Error("API error " + groupsRes.status);
-    const groups = await groupsRes.json();
-    const groupList = Array.isArray(groups) ? groups : groups.groups || groups.data || [];
-
-    const byId = {};
-    teamList.forEach(t => { byId[t.id] = t; });
+    const data = await cachedJSON("espn_standings", 10 * MIN, async () => {
+      const r = await fetch(ESPN_WEB + "/standings?season=2026");
+      if (!r.ok) throw new Error("standings " + r.status);
+      return r.json();
+    });
 
     // ---- Team stats from group standings (only teams that have played) ----
     const teamStats = [];
-    groupList.forEach(g => g.teams.forEach(s => {
-      const mp = N(s.w) + N(s.d) + N(s.l); // API mp field never updates
-      if (mp > 0) teamStats.push({team: byId[s.team_id], mp, gf: N(s.gf), ga: N(s.ga)});
-    }));
+    (data.children || []).forEach(g =>
+      ((g.standings && g.standings.entries) || []).forEach(e => {
+        const t = e.team || {};
+        const st = {};
+        (e.stats || []).forEach(x => { st[x.name] = x.value; });
+        const mp = N(st.gamesPlayed);
+        if (mp > 0) teamStats.push({
+          team: { name_en: t.displayName, flag: (t.logos && t.logos[0] && t.logos[0].href) || "" },
+          mp, gf: N(st.pointsFor), ga: N(st.pointsAgainst)
+        });
+      }));
     const row = (s, i, val, bad) => `
       <tr>
         <td class="pos">${i + 1}</td>
@@ -474,18 +464,11 @@ async function loadStats(){
 }
 
 // ===== Yellow/red cards from ESPN's public scoreboard =====
-// (worldcup26.ir has no card data; TheSportsDB timelines proved incomplete —
-//  ESPN returns the whole tournament with cards inline in one CORS-open call)
-const ESPN_SB = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200";
-
+// (same scoreboard call as the top-scorers list, shared via the "espn_sb" cache)
 async function loadCards(){
   const body = document.getElementById("cards");
   try {
-    const data = await cachedJSON("espn_sb", 10 * MIN, async () => {
-      const res = await fetch(ESPN_SB);
-      if (!res.ok) throw new Error("espn " + res.status);
-      return res.json();
-    });
+    const data = await cachedJSON("espn_sb", 10 * MIN, fetchSB);
 
     const carded = {}; // "name|teamId" -> {name, teamEn, flag, y, r}
     (data.events || []).forEach(ev => {

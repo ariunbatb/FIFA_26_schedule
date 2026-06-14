@@ -198,6 +198,9 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
   td.pos{color:var(--muted); font-weight:700; width:18px;}
   td.team{text-align:left;}
   .tname{display:inline-flex; align-items:center; gap:6px; font-weight:600;}
+  a.tname-link{text-decoration:none; color:inherit; cursor:pointer;}
+  a.tname-link:hover{color:var(--accent); text-decoration:underline;}
+  html.dark a.tname-link:hover{color:#4ade80;}
   .tname img{
     width:22px; height:15px; object-fit:cover; border-radius:2px;
     border:1px solid var(--line); box-shadow:0 1px 2px rgba(0,0,0,.12);
@@ -322,53 +325,68 @@ const MN = {
   "Colombia":"Колумб", "Democratic Republic of the Congo": "Конго"
 };
 
-const API = "https://worldcup26.ir";
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhMmI4MzZkNWE5YjM0NGQyYmU3NzJiZSIsImlhdCI6MTc4MTIzNjc2OCwiZXhwIjoxNzg4NDk0MzY4fQ.7eWsXNpg14byW-76uWj8gek_u6jiPGsSrwqOsHNA1gI";
+// Group tables come from ESPN's public WC API (CORS-open, key-less).
+// Replaces worldcup26.ir, which went offline.
+const ESPN_WEB = "https://site.web.api.espn.com/apis/v2/sports/soccer/fifa.world";
 
 const N = v => parseInt(v, 10) || 0;
+
+// team cell -> link to the team detail page (plain span if we lack a code)
+function teamCell(info){
+  info = info || {};
+  const label = MN[info.name_en] || info.name_en || "?";
+  const inner = `<img src="${info.flag || ""}" alt="" loading="lazy">${label}`;
+  if (!info.fifa_code) return `<span class="tname">${inner}</span>`;
+  const href = `team.html?code=${encodeURIComponent(info.fifa_code)}&name=${encodeURIComponent(info.name_en || "")}`;
+  return `<a class="tname tname-link" href="${href}">${inner}</a>`;
+}
 
 async function loadGroups(){
   const status = document.getElementById("status");
   try {
-    const opts = { headers: { "Authorization": "Bearer " + TOKEN } };
-    const [teamsRes, groupsRes] = await Promise.all([
-      fetch(API + "/get/teams", opts),
-      fetch(API + "/get/groups", opts)
-    ]);
-    if (!teamsRes.ok || !groupsRes.ok) throw new Error("API error " + teamsRes.status + "/" + groupsRes.status);
-    const teams = await teamsRes.json();
-    const groups = await groupsRes.json();
-    const teamList = Array.isArray(teams) ? teams : teams.teams || teams.data || [];
-    const groupList = Array.isArray(groups) ? groups : groups.groups || groups.data || [];
+    const res = await fetch(ESPN_WEB + "/standings?season=2026");
+    if (!res.ok) throw new Error("ESPN standings error " + res.status);
+    const data = await res.json();
+    const groupList = (data.children || []).slice()
+      .sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
-    // API team id -> {name, flag}
-    const byId = {};
-    teamList.forEach(t => { byId[t.id] = t; });
-
-    groupList.sort((a, b) => a.name.localeCompare(b.name));
     const app = document.getElementById("app");
     app.innerHTML = groupList.map(g => {
-      const rows = g.teams
-        .map(s => ({...s, info: byId[s.team_id] || {}}))
-        // API-ийн mp талбар шинэчлэгддэггүй тул W+D+L-ээр бодно
-        .map(s => ({...s, mp: N(s.w) + N(s.d) + N(s.l)}))
+      const letter = String(g.abbreviation || g.name || "").replace(/group/i, "").trim();
+      const entries = (g.standings && g.standings.entries) || [];
+      const rows = entries
+        .map(e => {
+          const t = e.team || {};
+          const st = {};
+          (e.stats || []).forEach(x => { st[x.name] = x.value; });
+          // ESPN abbreviation == our FIFA code; logos[0] is the country flag
+          const info = {
+            fifa_code: t.abbreviation,
+            name_en: t.displayName,
+            flag: (t.logos && t.logos[0] && t.logos[0].href) || ""
+          };
+          return {
+            info,
+            w:N(st.wins), d:N(st.ties), l:N(st.losses),
+            gf:N(st.pointsFor), ga:N(st.pointsAgainst), gd:N(st.pointDifferential),
+            pts:N(st.points), mp:N(st.gamesPlayed)
+          };
+        })
         .sort((x, y) =>
-          N(y.pts) - N(x.pts) || N(y.gd) - N(x.gd) || N(y.gf) - N(x.gf) ||
+          y.pts - x.pts || y.gd - x.gd || y.gf - x.gf ||
           (MN[x.info.name_en] || "").localeCompare(MN[y.info.name_en] || ""))
         .map((s, i) => `
           <tr class="${i < 2 ? "q" : ""}">
             <td class="pos">${i + 1}</td>
-            <td class="team"><span class="tname">
-              <img src="${s.info.flag || ""}" alt="" loading="lazy">${MN[s.info.name_en] || s.info.name_en || "?"}
-            </span></td>
-            <td>${s.mp}</td><td>${N(s.w)}</td><td>${N(s.d)}</td><td>${N(s.l)}</td>
-            <td>${N(s.gf)}</td><td>${N(s.ga)}</td>
-            <td>${N(s.gd) > 0 ? "+" : ""}${N(s.gd)}</td>
-            <td class="pts">${N(s.pts)}</td>
+            <td class="team">${teamCell(s.info)}</td>
+            <td>${s.mp}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td>
+            <td>${s.gf}</td><td>${s.ga}</td>
+            <td>${s.gd > 0 ? "+" : ""}${s.gd}</td>
+            <td class="pts">${s.pts}</td>
           </tr>`).join("");
       return `
         <div class="gcard">
-          <h2><span class="badge">${g.name}</span> хэсэг</h2>
+          <h2><span class="badge">${letter}</span> хэсэг</h2>
           <table>
             <thead><tr>
               <th></th><th class="t">Баг</th><th title="Тоглосон">Т</th><th title="Хожсон">Х</th>

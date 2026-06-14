@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДАШТ 2026 — Багийн мэдээлэл</title>
+<script>
+// Apply saved theme before first paint to avoid a light-mode flash.
+if (localStorage.getItem("fifa26_theme") === "dark" ||
+    (!localStorage.getItem("fifa26_theme") && matchMedia("(prefers-color-scheme: dark)").matches))
+  document.documentElement.classList.add("dark");
+</script>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1a2332; --muted:#6b7686;
+    --accent:#0e7a4d; --accent2:#1d4ed8; --line:#e6e9ef;
+    --shadow:0 1px 3px rgba(16,24,40,.06);
+  }
+  html.dark{
+    --bg:#10161f; --card:#1a2230; --ink:#e6ebf2; --muted:#94a3b8;
+    --line:#2a3547;
+    --shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--bg); color:var(--ink); padding-bottom:40px;
+  }
+  header{
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 26px, transparent 26px 52px),
+      radial-gradient(130% 170% at 50% -50%, #128a54 0%, #0b6b41 48%, #084f31 100%);
+    color:#fff; text-align:center; padding:30px 60px 20px;
+    position:relative;
+    border-bottom:4px solid #d9a513;
+  }
+  .theme-toggle, .info-btn{
+    position:absolute; top:14px;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.15); border:1.5px solid rgba(255,255,255,.55);
+    color:#fff; font-size:1.05rem; line-height:1; cursor:pointer;
+    transition:background .15s;
+  }
+  .theme-toggle{right:16px;}
+  .info-btn{left:16px;}
+  .theme-toggle:hover, .info-btn:hover{background:rgba(255,255,255,.32);}
+  header h1{font-size:1.75rem; letter-spacing:-.3px; text-shadow:0 2px 10px rgba(0,0,0,.28);}
+  header p{opacity:.85; margin-top:6px; font-size:.85rem; letter-spacing:.2px;}
+  .nav{display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;}
+  .nav a{
+    color:#fff; text-decoration:none; font-weight:700; font-size:.85rem;
+    padding:6px 22px; border-radius:99px; border:1px solid rgba(255,255,255,.4);
+    transition:background .15s; white-space:nowrap;
+  }
+  .nav a:hover{background:rgba(255,255,255,.15);}
+  .nav a.active{background:#fff; color:#084f31; border-color:#fff; box-shadow:0 2px 10px rgba(0,0,0,.22);}
+  @media(max-width:560px){
+    header{padding:26px 14px 16px;}
+    .nav{flex-wrap:nowrap; gap:6px; padding:0 0 4px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;}
+    .nav::-webkit-scrollbar{display:none;}
+    .nav a{flex:1 0 auto; min-width:max-content; padding:6px 12px; font-size:.74rem; text-align:center;}
+  }
+
+  .container{width:100%; max-width:780px; margin:0 auto; padding:18px;}
+  #status{text-align:center; color:var(--muted); padding:50px 0; font-size:.9rem;}
+
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px; margin-bottom:14px;
+    color:var(--accent); font-weight:700; font-size:.82rem; text-decoration:none;
+  }
+  html.dark .back-link{color:#4ade80;}
+  .back-link:hover{text-decoration:underline;}
+
+  /* ===== Team hero ===== */
+  .hero{
+    position:relative; overflow:hidden;
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    box-shadow:var(--shadow); padding:22px 18px 18px; text-align:center; margin-bottom:16px;
+  }
+  .hero .color-bar{
+    position:absolute; top:0; left:0; right:0; height:6px;
+    background:linear-gradient(90deg, var(--tc,#0e7a4d) 0 50%, var(--tc2,#1d4ed8) 50% 100%);
+  }
+  .hero-flag{
+    width:96px; height:96px; margin:6px auto 12px; border-radius:50%;
+    object-fit:cover; border:3px solid var(--line);
+    box-shadow:0 4px 14px rgba(0,0,0,.18); background:var(--bg);
+  }
+  .hero h2{font-size:1.5rem; letter-spacing:-.3px;}
+  .hero .en-name{color:var(--muted); font-size:.82rem; margin-top:2px; font-weight:600;}
+  .hero .summary{
+    display:inline-block; margin-top:10px; padding:4px 14px; border-radius:99px;
+    background:rgba(14,122,77,.12); color:var(--accent); font-weight:700; font-size:.78rem;
+  }
+  html.dark .hero .summary{background:#173a2a; color:#4ade80;}
+
+  /* ===== Section ===== */
+  .sec{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    box-shadow:var(--shadow); padding:14px 16px; margin-bottom:16px;
+  }
+  .sec-title{font-size:1rem; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .sec-title .ico{font-size:1.05rem;}
+
+  /* record stats */
+  .stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .stat{
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+    padding:10px 4px; text-align:center;
+  }
+  .stat .v{font-size:1.25rem; font-weight:900; line-height:1; font-variant-numeric:tabular-nums;}
+  .stat .v.pts{color:var(--accent);}
+  html.dark .stat .v.pts{color:#4ade80;}
+  .stat .k{font-size:.6rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-top:6px;}
+  @media(max-width:480px){ .stat-grid{grid-template-columns:repeat(4,1fr);} .stat .v{font-size:1.05rem;} }
+
+  /* group standings table */
+  .gtable{width:100%; border-collapse:collapse; font-size:.78rem;}
+  .gtable th{
+    color:var(--muted); font-size:.6rem; font-weight:700; letter-spacing:.4px;
+    text-transform:uppercase; padding:4px 3px; border-bottom:1px solid var(--line); text-align:center;
+  }
+  .gtable th.t{text-align:left;}
+  .gtable td{padding:6px 3px; border-bottom:1px solid var(--line); text-align:center; color:var(--ink);}
+  .gtable tr:last-child td{border-bottom:none;}
+  .gtable td.pos{color:var(--muted); font-weight:700; width:16px;}
+  .gtable td.tm{text-align:left;}
+  .gtable td.tm a{display:inline-flex; align-items:center; gap:6px; font-weight:600; text-decoration:none; color:inherit; white-space:nowrap;}
+  .gtable td.tm a:hover{color:var(--accent); text-decoration:underline;}
+  html.dark .gtable td.tm a:hover{color:#4ade80;}
+  .gtable td.tm img{width:20px; height:14px; object-fit:cover; border-radius:2px; border:1px solid var(--line);}
+  .gtable td.pts{font-weight:900; color:var(--accent);}
+  html.dark .gtable td.pts{color:#4ade80;}
+  .gtable tr.q td.pos{color:var(--accent); font-weight:900;}
+  html.dark .gtable tr.q td.pos{color:#4ade80;}
+  .gtable tr.me td{background:var(--hl,rgba(14,122,77,.10));}
+  .gtable tr.me td.tm a{font-weight:800;}
+
+  /* matches */
+  .mrow{
+    display:flex; align-items:center; gap:10px; padding:9px 4px;
+    border-bottom:1px solid var(--line); font-size:.84rem; text-decoration:none; color:inherit;
+  }
+  .mrow:last-child{border-bottom:none;}
+  .mrow .m-date{flex:0 0 64px; color:var(--muted); font-size:.7rem; font-weight:600; line-height:1.2;}
+  .mrow .m-opp{flex:1; display:flex; align-items:center; gap:7px; min-width:0; font-weight:600;}
+  .mrow .m-opp img{width:22px; height:15px; object-fit:cover; border-radius:2px; border:1px solid var(--line); flex:0 0 auto;}
+  .mrow .m-opp span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .mrow .m-res{flex:0 0 auto; font-weight:900; font-variant-numeric:tabular-nums; padding:2px 9px; border-radius:7px; font-size:.82rem;}
+  .m-res.w{background:rgba(14,122,77,.14); color:var(--accent);}
+  .m-res.l{background:rgba(220,38,38,.12); color:#dc2626;}
+  .m-res.d{background:var(--bg); color:var(--muted);}
+  .m-res.up{background:var(--bg); color:var(--muted); font-weight:700; font-size:.72rem;}
+  html.dark .m-res.w{background:#173a2a; color:#4ade80;}
+  .mrow .m-tv{flex:0 0 auto; display:flex; flex-wrap:wrap; justify-content:flex-end; gap:3px; max-width:46%;}
+  .m-ch{
+    color:#fff; font-size:.58rem; font-weight:800; letter-spacing:.2px;
+    padding:2px 6px; border-radius:5px; white-space:nowrap; line-height:1.3;
+  }
+  .m-ch.ch-num{cursor:pointer; transition:filter .15s;}
+  .m-ch.ch-num:hover{filter:brightness(1.12);}
+
+  /* "Where to watch" channel-number popover */
+  #chpop{
+    display:none; position:fixed; z-index:1500;
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 12px 32px rgba(16,24,40,.22);
+    padding:10px 12px; min-width:220px;
+  }
+  #chpop .cp-head{
+    display:flex; align-items:center; gap:7px;
+    font-size:.78rem; font-weight:800; margin-bottom:8px;
+    padding-bottom:6px; border-bottom:1px solid var(--line);
+  }
+  #chpop .cp-head .m-ch{font-size:.58rem;}
+  #chpop .cp-row{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    font-size:.74rem; padding:3px 0; color:var(--ink);
+  }
+  #chpop .cp-prov{color:var(--muted); font-weight:600;}
+  #chpop .cp-numb{
+    font-weight:800; font-variant-numeric:tabular-nums;
+    background:rgba(14,122,77,.12); color:var(--accent); border:1px solid rgba(14,122,77,.3);
+    border-radius:6px; padding:1px 9px; min-width:34px; text-align:center;
+  }
+  html.dark #chpop .cp-numb{background:#173a2a; color:#4ade80; border-color:#1f5236;}
+  #chpop .cp-numb.none{
+    background:transparent; color:var(--muted); border-color:var(--line); font-weight:600;
+  }
+
+  /* squad */
+  .pos-group{margin-bottom:12px;}
+  .pos-group:last-child{margin-bottom:0;}
+  .pos-label{font-size:.66rem; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin:0 0 7px 2px;}
+  .squad-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:7px;}
+  .player{
+    display:flex; align-items:center; gap:9px; padding:7px 9px;
+    background:var(--bg); border:1px solid var(--line); border-radius:10px;
+  }
+  .player .num{
+    flex:0 0 28px; height:28px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--tc,#0e7a4d); color:#fff; font-weight:800; font-size:.78rem;
+  }
+  .player .p-body{display:flex; flex-direction:column; min-width:0; line-height:1.25;}
+  .player .p-name{font-weight:700; font-size:.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .player .p-meta{font-size:.65rem; color:var(--muted);}
+
+  .empty{color:var(--muted); font-size:.8rem; text-align:center; padding:8px 0;}
+
+  /* ===== About / contact / donate modal ===== */
+  #aboutOverlay{
+    display:none; position:fixed; inset:0; z-index:1400;
+    background:rgba(8,16,12,.55); backdrop-filter:blur(2px);
+    align-items:center; justify-content:center; padding:16px;
+  }
+  #aboutOverlay.open{display:flex;}
+  #aboutSheet{
+    position:relative; width:min(420px,100%);
+    max-height:calc(100dvh - 32px); overflow-y:auto;
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.4); animation:md-pop .18s ease;
+    padding:22px 20px 18px; text-align:center;
+  }
+  @keyframes md-pop{from{opacity:0; transform:translateY(12px) scale(.98);} to{opacity:1; transform:none;}}
+  #aboutClose{
+    position:absolute; top:12px; right:12px;
+    width:30px; height:30px; border-radius:50%; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--muted);
+    font-size:.9rem; line-height:1;
+  }
+  #aboutClose:hover{color:var(--ink); border-color:var(--accent);}
+  #aboutSheet h2{font-size:1.1rem; margin-bottom:5px;}
+  #aboutSheet .about-desc{color:var(--muted); font-size:.78rem; line-height:1.45;}
+  .about-icon{
+    width:50px; height:50px; margin:6px auto 10px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; font-size:1.6rem;
+    background:var(--hl,rgba(14,122,77,.10)); border:1px solid var(--line);
+  }
+  .donate-head{
+    display:flex; align-items:baseline; justify-content:space-between; margin:16px 2px 0;
+  }
+  .donate-head .d-title{font-size:.82rem; font-weight:600;}
+  .donate-head .d-sub{font-size:.7rem; color:var(--muted); font-weight:600;}
+  .about-note{margin-top:10px; color:var(--muted); font-size:.72rem;}
+  .copy-acct{
+    position:relative; margin-top:10px; width:100%; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    padding:11px 40px; border-radius:12px;
+    background:var(--hl,rgba(14,122,77,.10)); border:1px solid var(--line); color:var(--ink);
+    font:inherit; transition:border-color .15s;
+  }
+  .copy-acct:hover{border-color:var(--accent);}
+  .copy-acct .acct-num{
+    font-weight:600; letter-spacing:.5px; font-size:.92rem;
+    font-variant-numeric:tabular-nums; text-align:center;
+  }
+  .copy-acct .acct-ico{
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    display:flex; color:var(--muted);
+  }
+  .copy-acct .acct-ico svg{width:17px; height:17px;}
+  .copy-acct.copied{border-color:var(--accent); color:var(--accent-deep,var(--accent));}
+  .copy-acct.copied .acct-ico{color:var(--accent);}
+  html.dark .copy-acct.copied,
+  html.dark .copy-acct.copied .acct-ico{color:var(--hl-border,var(--accent));}
+
+  /* ===== Site footer ===== */
+  .site-footer{margin-top:36px; padding:22px 16px; border-top:1px solid var(--line); background:var(--card);}
+  .foot-inner{max-width:760px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px 18px; font-size:.82rem;}
+  .foot-link{
+    display:inline-flex; align-items:center; gap:5px;
+    color:var(--accent-deep,var(--accent)); background:none; border:none; cursor:pointer;
+    font:inherit; font-weight:700; text-decoration:none; padding:4px 2px;
+  }
+  html.dark .foot-link{color:var(--hl-border,var(--accent));}
+  .foot-link:hover{text-decoration:underline;}
+  .foot-copy{color:var(--muted); font-weight:600;}
+  @media(max-width:560px){ .site-footer{margin-bottom:78px;} }
+
+  /* Mobile bottom tab bar */
+  .tabbar{display:none;}
+  @media(max-width:560px){
+    body{padding-bottom:calc(78px + env(safe-area-inset-bottom));}
+    .nav{display:none;}
+    .tabbar{
+      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:1000;
+      background:var(--card); border-top:1px solid var(--line);
+      padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+      box-shadow:0 -6px 18px rgba(0,0,0,.14);
+    }
+    .tabbar a{
+      flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+      color:var(--muted); text-decoration:none; font-size:.66rem; font-weight:600; letter-spacing:.2px;
+      padding:4px 0 2px; position:relative;
+    }
+    .tabbar a svg{width:22px; height:22px;}
+    .tabbar a.active{color:var(--accent);}
+    html.dark .tabbar a.active{color:#22c55e;}
+  }
+</style>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b6b41">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<script src="pwa.js" defer></script>
+</head>
+<body>
+
+<header>
+  <button class="info-btn" id="infoBtn" title="Дэмжих · Холбоо барих">☕</button>
+  <button class="theme-toggle" id="themeToggle" title="Өдөр/шөнийн горим">🌙</button>
+  <h1>⚽ Хөлбөмбөгийн ДАШТ-2026</h1>
+  <p>Багийн дэлгэрэнгүй мэдээлэл</p>
+  <nav class="nav">
+    <a href="index.html">Хуваарь</a>
+    <a href="index.html#saved">⭐ Хадгалсан</a>
+    <a href="groups.html">Хэсэг</a>
+    <a href="stats.html">Статистик</a>
+  </nav>
+</header>
+
+<nav class="tabbar">
+  <a href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Тоглолт</span>
+  </a>
+  <a href="index.html#saved">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span>Хадгалсан</span>
+  </a>
+  <a href="groups.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Хэсэг</span>
+  </a>
+  <a href="stats.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+    <span>Статистик</span>
+  </a>
+</nav>
+
+<div class="container">
+  <a class="back-link" href="javascript:history.length>1?history.back():location.assign('index.html')">← Буцах</a>
+  <div id="status">Багийн мэдээлэл ачаалж байна…</div>
+  <div id="app"></div>
+</div>
+
+<footer class="site-footer">
+  <div class="foot-inner">
+    <button class="foot-link" id="footDonate">☕ Donation</button>
+    <span class="foot-copy">© 2026 · Хөлбөмбөгийн ДАШТ хуваарь</span>
+  </div>
+</footer>
+
+<div id="aboutOverlay" role="dialog" aria-modal="true" aria-label="Тухай">
+  <div id="aboutSheet">
+    <button id="aboutClose" title="Хаах">✕</button>
+    <div class="about-icon">⚽</div>
+    <h2>Хөлбөмбөгийн ДАШТ-2026</h2>
+    <p class="about-desc">
+      2026 оны Дэлхийн аварга шалгаруулах тэмцээний бүх тоглолтын хуваарь, телевизийн сувгийн мэдээлэл,
+      хэсгийн байр, статистикийг хүргэдэг веб.
+    </p>
+
+    <div class="donate-head">
+      <span class="d-title">✉️ Холбоо барих</span>
+    </div>
+    <a class="copy-acct" href="mailto:ariunbat_cs@yahoo.com">
+      <span class="acct-num">ariunbat_cs@yahoo.com</span>
+    </a>
+
+    <div class="donate-head">
+      <span class="d-title">☕ Donation</span>
+      <span class="d-sub">ХХБ · Ариунбат</span>
+    </div>
+    <button class="copy-acct" id="copyAcct" data-acct="MN420004000466063833" title="Хуулах">
+      <span class="acct-num">MN42 0004 0004 6606 3833</span>
+      <span class="acct-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+      </span>
+    </button>
+
+    <p class="about-note">AI чат ботын талаар мэдээлэл авахыг хүсвэл <a href="https://www.mongolgpt.mn/" target="_blank" rel="noopener" style="color:var(--accent); font-weight:700;">mongolgpt.mn</a> сайтаас мэдээлэл авна уу.</p>
+  </div>
+</div>
+
+<script>
+// ===== Dark mode toggle =====
+const themeBtn = document.getElementById("themeToggle");
+const syncThemeIcon = () =>
+  themeBtn.textContent = document.documentElement.classList.contains("dark") ? "☀️" : "🌙";
+syncThemeIcon();
+themeBtn.addEventListener("click", () => {
+  const dark = document.documentElement.classList.toggle("dark");
+  localStorage.setItem("fifa26_theme", dark ? "dark" : "light");
+  syncThemeIcon();
+});
+
+// ===== About / contact / donate modal =====
+(() => {
+  const overlay = document.getElementById("aboutOverlay");
+  const open  = () => overlay.classList.add("open");
+  const close = () => overlay.classList.remove("open");
+  ["infoBtn", "footDonate"].forEach(id =>
+    document.getElementById(id)?.addEventListener("click", open));
+  document.getElementById("aboutClose").addEventListener("click", close);
+  overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && overlay.classList.contains("open")) close();
+  });
+  const copyBtn = document.getElementById("copyAcct");
+  if (copyBtn) {
+    const ico = copyBtn.querySelector(".acct-ico");
+    const copySvg = ico.innerHTML;
+    const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    copyBtn.addEventListener("click", async () => {
+      const acct = copyBtn.dataset.acct;
+      try {
+        await navigator.clipboard.writeText(acct);
+      } catch (err) {
+        const t = document.createElement("textarea");
+        t.value = acct; document.body.appendChild(t); t.select();
+        document.execCommand("copy"); t.remove();
+      }
+      copyBtn.classList.add("copied");
+      ico.innerHTML = checkSvg;
+      setTimeout(() => {
+        copyBtn.classList.remove("copied");
+        ico.innerHTML = copySvg;
+      }, 1500);
+    });
+  }
+})();
+
+// ===== Mongolian names (keyed by ESPN / English name) =====
+const MN = {
+  "Mexico":"Мексик","South Africa":"Өмнөд Африк","South Korea":"Өмнөд Солонгос","Czechia":"Чех",
+  "Czech Republic":"Чех","Canada":"Канад","Bosnia and Herzegovina":"Босни-Герцеговин",
+  "Bosnia & Herzegovina":"Босни-Герцеговин","USA":"АНУ","United States":"АНУ","Paraguay":"Парагвай",
+  "Qatar":"Катар","Switzerland":"Швейцарь","Brazil":"Бразил","Morocco":"Марокко","Haiti":"Гаити",
+  "Scotland":"Шотланд","Australia":"Австрали","Türkiye":"Турк","Turkey":"Турк","Germany":"Герман",
+  "Curaçao":"Кюрасао","Curacao":"Кюрасао","Netherlands":"Нидерланд","Japan":"Япон",
+  "Ivory Coast":"Кот д'Ивуар","Côte d'Ivoire":"Кот д'Ивуар","Ecuador":"Эквадор","Sweden":"Швед",
+  "Tunisia":"Тунис","Spain":"Испани","Cape Verde":"Кабо-Верде","Belgium":"Бельги","Egypt":"Египет",
+  "Saudi Arabia":"Саудын Араб","Uruguay":"Уругвай","Iran":"Иран","New Zealand":"Шинэ Зеланд",
+  "France":"Франц","Senegal":"Сенегал","Iraq":"Ирак","Norway":"Норвеги","Argentina":"Аргентин",
+  "Algeria":"Алжир","Austria":"Австри","Jordan":"Йордан","Portugal":"Португал","DR Congo":"Конго",
+  "England":"Англи","Croatia":"Хорват","Ghana":"Гана","Panama":"Панам","Uzbekistan":"Узбекистан",
+  "Colombia":"Колумб","Democratic Republic of the Congo":"Конго"
+};
+const mnName = en => MN[en] || en || "?";
+
+// Mongolian month/weekday for match dates
+const WD = ["Ням","Даваа","Мягмар","Лхагва","Пүрэв","Баасан","Бямба"];
+
+const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
+const POS_ORDER = ["G","D","M","F"];
+const POS_MN = { G:"Хаалгач", D:"Хамгаалагч", M:"Хагас хамгаалагч", F:"Довтлогч" };
+
+// Group membership by FIFA/ESPN abbreviation (fixed draw). Used to build the
+// group table from completed group-stage results in the scoreboard.
+const GROUPS = {
+  A:["MEX","RSA","KOR","CZE"], B:["CAN","BIH","QAT","SUI"], C:["BRA","MAR","HAI","SCO"],
+  D:["USA","PAR","AUS","TUR"], E:["GER","CUW","CIV","ECU"], F:["NED","JPN","SWE","TUN"],
+  G:["BEL","EGY","IRN","NZL"], H:["ESP","CPV","KSA","URU"], I:["FRA","SEN","IRQ","NOR"],
+  J:["ARG","ALG","AUT","JOR"], K:["POR","COD","UZB","COL"], L:["ENG","CRO","GHA","PAN"]
+};
+const groupOf = abbr => Object.keys(GROUPS).find(g => GROUPS[g].includes(abbr));
+const TEAMS_BY_CODE = {};   // abbr -> {name, logo} from the ESPN teams list
+
+// TV broadcaster brand colors (mirrors index.html CH)
+const CH = {
+  "EDU TV":"#16a34a","MNB":"#ea580c","NTV":"#dc2626",
+  "NSPORTS":"#2563eb","SULD TV":"#7c3aed","TBA":"#94a3b8"
+};
+// Which channel NUMBER each broadcaster sits on, per TV provider (mirrors index.html).
+const PROVIDERS = ["Univision", "Skymedia", "DDish", "Mobihome"];
+const CHNUM = {
+  "EDU TV":  { Univision:"10", Skymedia:"9", DDish:"6", Mobihome:"14" },
+  "MNB":     { Univision:"1", Skymedia:"2", DDish:"1", Mobihome:"3" },
+  "NTV":     { Univision:"8", Skymedia:"3", DDish:"9", Mobihome:"9" },
+  "NSPORTS": { Univision:"61", Skymedia:"600", DDish:"29", Mobihome:"35" },
+  "SULD TV": { Univision:"19", Skymedia:"19", DDish:"19", Mobihome:"19" }
+};
+// Channels per match, keyed by sorted FIFA-code pair (derived from index.html M).
+const TV_BY_PAIR = {"ALG|ARG":["MNB"], "ALG|AUT":["MNB"], "ALG|JOR":["MNB"], "ARG|AUT":["MNB"], "ARG|JOR":["SULD TV"], "AUS|PAR":["MNB"], "AUS|TUR":["NSPORTS"], "AUS|USA":["NSPORTS"], "AUT|JOR":["NTV"], "BEL|EGY":["NTV"], "BEL|IRN":["NTV"], "BEL|NZL":["NSPORTS"], "BIH|CAN":["EDU TV"], "BIH|QAT":["NTV"], "BIH|SUI":["EDU TV"], "BRA|HAI":["NTV"], "BRA|MAR":["NTV"], "BRA|SCO":["NTV"], "CAN|QAT":["EDU TV"], "CAN|SUI":["EDU TV"], "CIV|CUW":["MNB"], "CIV|ECU":["EDU TV"], "CIV|GER":["EDU TV"], "COD|COL":["EDU TV"], "COD|POR":["EDU TV"], "COD|UZB":["MNB"], "COL|POR":["EDU TV"], "COL|UZB":["EDU TV"], "CPV|ESP":["NSPORTS"], "CPV|KSA":["NTV"], "CPV|URU":["NSPORTS"], "CRO|ENG":["NTV"], "CRO|GHA":["MNB"], "CRO|PAN":["NTV"], "CUW|ECU":["NTV"], "CUW|GER":["EDU TV"], "CZE|KOR":["SULD TV"], "CZE|MEX":["MNB"], "CZE|RSA":["MNB"], "ECU|GER":["EDU TV"], "EGY|IRN":["NTV"], "EGY|NZL":["NTV"], "ENG|GHA":["NTV"], "ENG|PAN":["NSPORTS"], "ESP|KSA":["NSPORTS"], "ESP|URU":["NSPORTS"], "FRA|IRQ":["EDU TV"], "FRA|NOR":["EDU TV"], "FRA|SEN":["EDU TV"], "GHA|PAN":["NTV"], "HAI|MAR":["NSPORTS"], "HAI|SCO":["NTV"], "IRN|NZL":["NTV"], "IRQ|NOR":["EDU TV"], "IRQ|SEN":["MNB"], "JPN|NED":["SULD TV"], "JPN|SWE":["SULD TV"], "JPN|TUN":["SULD TV"], "KOR|MEX":["SULD TV"], "KOR|RSA":["SULD TV"], "KSA|URU":["NSPORTS"], "MAR|SCO":["NTV"], "MEX|RSA":["EDU TV","MNB","NTV","NSPORTS"], "NED|SWE":["MNB"], "NED|TUN":["MNB"], "NOR|SEN":["EDU TV"], "PAR|TUR":["NSPORTS"], "PAR|USA":["NSPORTS"], "POR|UZB":["EDU TV"], "QAT|SUI":["EDU TV"], "SWE|TUN":["MNB"], "TUR|USA":["NSPORTS"]};
+const tvFor = (a, b) => TV_BY_PAIR[[a, b].sort().join("|")] || [];
+
+const qs = new URLSearchParams(location.search);
+const wantCode = (qs.get("code") || "").toUpperCase();
+const wantName = qs.get("name") || "";
+
+const statusEl = document.getElementById("status");
+const app = document.getElementById("app");
+
+function fail(msg){
+  statusEl.textContent = msg || "Багийн мэдээлэл олдсонгүй.";
+  statusEl.style.display = "block";
+}
+
+// Format an ESPN ISO date (UTC) into UB time "6-р сар 12" + weekday
+function fmtDate(iso){
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  // convert to Ulaanbaatar (UTC+8)
+  const ub = new Date(d.getTime() + 8 * 3600 * 1000);
+  return `${ub.getUTCMonth() + 1}-р сар<br>${ub.getUTCDate()} · ${WD[ub.getUTCDay()]}`;
+}
+
+async function load(){
+  // NOTE: the ESPN /teams list endpoint does NOT send CORS headers, so we resolve
+  // every team (id, name, crest, colors) from the /scoreboard competitors instead —
+  // that endpoint is CORS-open, and we need it for matches + the group table anyway.
+  let board;
+  try {
+    board = await (await fetch(`${ESPN}/scoreboard?dates=20260611-20260720&limit=400`)).json();
+  } catch (e){ return fail("Сүлжээний алдаа. Дахин оролдоно уу."); }
+
+  ((board.events) || []).forEach(ev => {
+    const c = ev.competitions && ev.competitions[0];
+    if (!c) return;
+    c.competitors.forEach(z => {
+      const t = z.team;
+      if (t && t.abbreviation && !TEAMS_BY_CODE[t.abbreviation])
+        TEAMS_BY_CODE[t.abbreviation] = {
+          id: t.id, name: t.displayName, logo: t.logo || "",
+          color: t.color, alt: t.alternateColor
+        };
+    });
+  });
+
+  const abbr = (wantCode && TEAMS_BY_CODE[wantCode]) ? wantCode
+    : Object.keys(TEAMS_BY_CODE).find(c =>
+        TEAMS_BY_CODE[c].name === wantName || mnName(TEAMS_BY_CODE[c].name) === mnName(wantName));
+  const found = abbr && TEAMS_BY_CODE[abbr];
+  if (!found) return fail("Энэ багийн мэдээлэл одоогоор алга байна.");
+
+  const id = found.id;
+  const logo = found.logo;
+  document.documentElement.style.setProperty("--tc", "#" + (found.color || "0e7a4d"));
+  document.documentElement.style.setProperty("--tc2", "#" + (found.alt || found.color || "1d4ed8"));
+
+  const enName = found.name;
+  const mn = mnName(enName);
+  document.title = `${mn} — ДАШТ 2026`;
+
+  // Detail (record) + roster (squad) — both CORS-open. Tolerate individual failures.
+  const [detail, roster] = await Promise.all([
+    fetch(`${ESPN}/teams/${id}`).then(r => r.json()).catch(() => null),
+    fetch(`${ESPN}/teams/${id}/roster`).then(r => r.json()).catch(() => null)
+  ]);
+
+  // ---- Hero + record ----
+  const dt = detail && detail.team;
+  let summary = "";
+  let statsHTML = "";
+  if (dt && dt.record && dt.record.items && dt.record.items[0]) {
+    summary = dt.standingSummary || "";
+    const s = {};
+    dt.record.items[0].stats.forEach(x => { s[x.name] = x.value; });
+    const stat = (v, k, cls) => `<div class="stat"><div class="v ${cls||''}">${v}</div><div class="k">${k}</div></div>`;
+    statsHTML = `
+      <div class="sec">
+        <div class="sec-title"><span class="ico">📊</span>Хэсгийн дүн</div>
+        <div class="stat-grid">
+          ${stat(s.gamesPlayed ?? 0, "Тоглосон")}
+          ${stat(s.wins ?? 0, "Хожсон")}
+          ${stat(s.ties ?? 0, "Тэнцсэн")}
+          ${stat(s.losses ?? 0, "Хожигдсон")}
+          ${stat(s.pointsFor ?? 0, "Оруулсан")}
+          ${stat(s.pointsAgainst ?? 0, "Алдсан")}
+          ${stat((s.pointDifferential > 0 ? "+" : "") + (s.pointDifferential ?? 0), "Зөрүү")}
+          ${stat(s.points ?? 0, "Оноо", "pts")}
+        </div>
+      </div>`;
+  }
+
+  app.innerHTML = `
+    <div class="hero">
+      <div class="color-bar"></div>
+      <img class="hero-flag" src="${logo}" alt="${mn}" onerror="this.style.visibility='hidden'">
+      <h2>${mn}</h2>
+      <div class="en-name">${enName}</div>
+    </div>
+    ${statsHTML}
+    <div id="group"></div>
+    <div id="matches"></div>
+    <div id="squad"></div>`;
+  statusEl.style.display = "none";
+
+  renderGroup(board, abbr);
+  renderMatches(board, abbr);
+  renderSquad(roster);
+}
+
+// Build the team's group table from completed group-stage results in the scoreboard.
+function renderGroup(board, abbr){
+  const box = document.getElementById("group");
+  const g = groupOf(abbr);
+  if (!g) return;
+  const codes = GROUPS[g];
+  const row = {};
+  codes.forEach(c => { row[c] = { code:c, p:0, w:0, d:0, l:0, gf:0, ga:0, pts:0 }; });
+
+  ((board && board.events) || []).forEach(ev => {
+    const c = ev.competitions && ev.competitions[0];
+    if (!c) return;
+    if (!(ev.status && ev.status.type && ev.status.type.completed)) return;
+    const cs = c.competitors;
+    if (cs.length !== 2) return;
+    const [x, y] = cs.map(z => z.team.abbreviation);
+    if (!row[x] || !row[y]) return;           // both must be in this group (filters out KO)
+    const sx = parseInt(cs[0].score, 10) || 0, sy = parseInt(cs[1].score, 10) || 0;
+    const A = row[cs[0].team.abbreviation], B = row[cs[1].team.abbreviation];
+    A.p++; B.p++; A.gf += sx; A.ga += sy; B.gf += sy; B.ga += sx;
+    if (sx > sy){ A.w++; B.l++; A.pts += 3; }
+    else if (sx < sy){ B.w++; A.l++; B.pts += 3; }
+    else { A.d++; B.d++; A.pts++; B.pts++; }
+  });
+
+  const table = Object.values(row).map(r => ({ ...r, gd: r.gf - r.ga }))
+    .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf ||
+      mnName(TEAMS_BY_CODE[a.code]?.name).localeCompare(mnName(TEAMS_BY_CODE[b.code]?.name), "mn"));
+
+  const rows = table.map((r, i) => {
+    const info = TEAMS_BY_CODE[r.code] || {};
+    const isMe = r.code === abbr;
+    const href = `team.html?code=${encodeURIComponent(r.code)}&name=${encodeURIComponent(info.name || "")}`;
+    return `<tr class="${i < 2 ? "q" : ""}${isMe ? " me" : ""}">
+        <td class="pos">${i + 1}</td>
+        <td class="tm"><a href="${href}"><img src="${info.logo || ""}" alt="" loading="lazy">${mnName(info.name)}</a></td>
+        <td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
+        <td>${r.gd > 0 ? "+" : ""}${r.gd}</td><td class="pts">${r.pts}</td>
+      </tr>`;
+  }).join("");
+
+  box.innerHTML = `
+    <div class="sec">
+      <div class="sec-title"><span class="ico">🏆</span>${g} хэсгийн байр</div>
+      <table class="gtable">
+        <thead><tr>
+          <th></th><th class="t">Баг</th>
+          <th title="Тоглосон">Т</th><th title="Хожсон">Х</th>
+          <th title="Тэнцсэн">Тэ</th><th title="Хожигдсон">Хо</th>
+          <th title="Гоолын зөрүү">+/-</th><th>Оноо</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function renderMatches(board, abbr){
+  const box = document.getElementById("matches");
+  const events = (board && board.events) || [];
+  const mine = events.map(ev => {
+    const c = ev.competitions && ev.competitions[0];
+    if (!c) return null;
+    const me = c.competitors.find(x => x.team.abbreviation === abbr);
+    const opp = c.competitors.find(x => x.team.abbreviation !== abbr);
+    if (!me || !opp) return null;
+    return { ev, c, me, opp };
+  }).filter(Boolean).sort((a, b) => new Date(a.ev.date) - new Date(b.ev.date));
+
+  if (!mine.length) return;
+
+  const rows = mine.map(({ ev, me, opp }) => {
+    const oppMn = mnName(opp.team.displayName);
+    const oppFlag = opp.team.logo || "";
+    const completed = ev.status && ev.status.type && ev.status.type.completed;
+    let res = `<span class="m-res up">VS</span>`;
+    if (completed) {
+      const ms = parseInt(me.score, 10) || 0, os = parseInt(opp.score, 10) || 0;
+      const cls = ms > os ? "w" : ms < os ? "l" : "d";
+      res = `<span class="m-res ${cls}">${ms} : ${os}</span>`;
+    }
+    const href = `team.html?code=${encodeURIComponent(opp.team.abbreviation)}&name=${encodeURIComponent(opp.team.displayName)}`;
+    const chans = tvFor(me.team.abbreviation, opp.team.abbreviation)
+      .map(ch => {
+        const known = CHNUM[ch] && PROVIDERS.some(p => CHNUM[ch][p]);
+        return `<span class="m-ch${known ? " ch-num" : ""}" data-ch="${ch}" style="background:${CH[ch] || "#64748b"}">${ch}</span>`;
+      }).join("");
+    const tvHTML = chans ? `<span class="m-tv">${chans}</span>` : "";
+    return `<a class="mrow" href="${href}">
+        <span class="m-date">${fmtDate(ev.date)}</span>
+        <span class="m-opp"><img src="${oppFlag}" alt="" loading="lazy">${res}<span>${oppMn}</span></span>
+        ${tvHTML}
+      </a>`;
+  }).join("");
+
+  box.innerHTML = `
+    <div class="sec">
+      <div class="sec-title"><span class="ico">📅</span>Тоглолтууд</div>
+      ${rows}
+    </div>`;
+}
+
+function renderSquad(roster){
+  const box = document.getElementById("squad");
+  const players = (roster && roster.athletes) || [];
+  if (!players.length) {
+    box.innerHTML = `<div class="sec"><div class="sec-title"><span class="ico">👥</span>Бүрэлдэхүүн</div>
+      <div class="empty">Бүрэлдэхүүний мэдээлэл одоогоор алга.</div></div>`;
+    return;
+  }
+  const byPos = {};
+  players.forEach(p => {
+    const pos = (p.position && p.position.abbreviation) || "?";
+    (byPos[pos] = byPos[pos] || []).push(p);
+  });
+  const order = POS_ORDER.filter(k => byPos[k]).concat(Object.keys(byPos).filter(k => !POS_ORDER.includes(k)));
+  const groups = order.map(pos => {
+    const items = byPos[pos]
+      .sort((a, b) => (parseInt(a.jersey, 10) || 99) - (parseInt(b.jersey, 10) || 99))
+      .map(p => `
+        <div class="player">
+          <span class="num">${p.jersey || "–"}</span>
+          <span class="p-body">
+            <span class="p-name">${p.displayName}</span>
+            <span class="p-meta">${p.age ? p.age + " нас" : ""}</span>
+          </span>
+        </div>`).join("");
+    return `<div class="pos-group">
+        <div class="pos-label">${POS_MN[pos] || pos} · ${byPos[pos].length}</div>
+        <div class="squad-grid">${items}</div>
+      </div>`;
+  }).join("");
+  box.innerHTML = `
+    <div class="sec">
+      <div class="sec-title"><span class="ico">👥</span>Бүрэлдэхүүн</div>
+      ${groups}
+    </div>`;
+}
+
+// ===== "Where to watch" channel-number popover (click a TV chip) =====
+const chpop = document.createElement("div");
+chpop.id = "chpop";
+document.body.appendChild(chpop);
+
+function showChPop(el, c){
+  const map = CHNUM[c] || {};
+  const rows = PROVIDERS.map(p => {
+    const n = map[p];
+    const cell = n ? `<span class="cp-numb">${n}</span>` : `<span class="cp-numb none">—</span>`;
+    return `<div class="cp-row"><span class="cp-prov">${p}</span>${cell}</div>`;
+  }).join("");
+  chpop.innerHTML =
+    `<div class="cp-head"><span class="m-ch" style="background:${CH[c] || "#94a3b8"}">${c}</span>` +
+    `сувгийн дугаар</div>${rows}`;
+  chpop.style.display = "block";
+  const r = el.getBoundingClientRect();
+  const pw = chpop.offsetWidth, ph = chpop.offsetHeight;
+  let x = Math.min(r.left, innerWidth - pw - 10);
+  let y = r.bottom + 8;
+  if (y + ph > innerHeight - 10) y = r.top - ph - 8;
+  chpop.style.left = Math.max(8, x) + "px";
+  chpop.style.top  = Math.max(8, y) + "px";
+}
+const hideChPop = () => { chpop.style.display = "none"; };
+
+document.addEventListener("click", e => {
+  const chip = e.target.closest(".m-ch.ch-num");
+  if (chip) {
+    e.preventDefault();          // don't follow the match row's link
+    e.stopPropagation();
+    showChPop(chip, chip.dataset.ch);
+  } else if (!e.target.closest("#chpop")) {
+    hideChPop();
+  }
+});
+window.addEventListener("scroll", hideChPop, true);
+window.addEventListener("resize", hideChPop);
+
+load();
+</script>
+</body>
+</html>
