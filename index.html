@@ -585,8 +585,65 @@ if (localStorage.getItem("fifa26_theme") === "dark" ||
     font-size:.55rem; font-weight:800; letter-spacing:.3px;
     color:#fff; background:var(--muted); border-radius:4px; padding:1px 4px;
   }
+  .md-subin{color:#16a34a; font-weight:700;}
+  html.dark .md-subin{color:#4ade80;}
+  .md-subout{color:var(--muted); font-weight:600;}
   .md-noev{text-align:center; color:var(--muted); font-size:.78rem; padding:14px 0;}
   .md-cardnote{text-align:center; color:var(--muted); font-size:.64rem; padding:8px 0 2px; opacity:.8;}
+  /* tabs (Дэлгэрэнгүй / Бүрэлдэхүүн) */
+  .md-tabs{display:flex; border-bottom:1px solid var(--line);}
+  .md-tab{
+    flex:1; border:none; background:none; cursor:pointer; font-family:inherit;
+    font-size:.78rem; font-weight:800; color:var(--muted); padding:11px 8px; position:relative;
+    transition:color .15s;
+  }
+  .md-tab:hover{color:var(--ink);}
+  .md-tab.active{color:var(--accent);}
+  html.dark .md-tab.active{color:#4ade80;}
+  .md-tab.active::after{
+    content:""; position:absolute; left:50%; bottom:-1px; transform:translateX(-50%);
+    width:60%; height:3px; border-radius:3px 3px 0 0; background:currentColor;
+  }
+  /* line-ups */
+  .lu-body{padding:12px;}
+  .lu-pitch{
+    display:flex; flex-direction:column;
+    border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    background:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 38px, transparent 38px 76px),
+      linear-gradient(#0e4a2b, #0b3b22);
+  }
+  .lu-half{
+    display:flex; flex-direction:column; justify-content:space-between;
+    flex:1; min-height:188px; padding:12px 4px; position:relative;
+  }
+  .lu-half.top{border-bottom:2px solid rgba(255,255,255,.22);}
+  .lu-row{display:flex; justify-content:space-around; align-items:center;}
+  .lu-p{display:flex; flex-direction:column; align-items:center; gap:3px; width:19%;}
+  .lu-num{
+    width:30px; height:30px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:.76rem; background:#fff; color:#10231a;
+    box-shadow:0 2px 5px rgba(0,0,0,.35);
+  }
+  .lu-num.g{background:#9fb0a8;}
+  .lu-name{
+    font-size:.58rem; color:#fff; line-height:1.15; text-align:center;
+    max-width:70px; text-shadow:0 1px 2px rgba(0,0,0,.8);
+  }
+  .lu-form{
+    position:absolute; left:8px; font-size:.62rem; font-style:italic; font-weight:700;
+    color:rgba(255,255,255,.7);
+  }
+  .lu-half.top .lu-form{top:6px;}
+  .lu-half.bottom .lu-form{bottom:6px;}
+  .lu-subs{font-size:.66rem; color:var(--muted); padding:8px 4px 0; line-height:1.4;}
+  .lu-subs b{color:var(--ink);}
+  .lu-list{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .lu-lt{font-size:.72rem; font-weight:800; margin-bottom:5px; padding-bottom:4px; border-bottom:1px solid var(--line);}
+  .lu-lt span{color:var(--muted); font-weight:600; font-size:.62rem;}
+  .lu-li{font-size:.72rem; padding:2px 0;}
+  .lu-li b{display:inline-block; min-width:20px; color:var(--muted); font-weight:800;}
   .md-hl{padding:4px 16px 14px; border-top:1px solid var(--line);}
   .md-hl-title{font-size:.72rem; font-weight:800; color:var(--muted); margin:8px 0; text-align:center;}
   .md-hl-thumb{
@@ -1598,7 +1655,34 @@ function ytId(s){
 const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
 const ESPN_BY_PAIR = {};        // "ABBR|ABBR"(sorted) -> {id, homeId, homeAbbr, awayId, awayAbbr}
 const espnCards = {};           // eventId -> array of cards | "pending" | "error"
+const espnLineups = {};         // eventId -> {home,away} | "pending" | "error" | null
 const ESPN_IDX_KEY = "wc26_espn_idx_v1";
+
+// "Alistair Johnston" -> "A. Johnston"
+function shortName(n){
+  const p = String(n || "").trim().split(/\s+/);
+  return p.length > 1 ? `${p[0][0]}. ${p[p.length - 1]}` : (p[0] || "");
+}
+function parseEspnLineups(data){
+  const rs = data.rosters || [];
+  if (rs.length < 2) return null;
+  const out = {};
+  rs.forEach(r => {
+    if (r.homeAway !== "home" && r.homeAway !== "away") return;
+    const map = p => ({
+      num: p.jersey || "",
+      name: shortName(p.athlete && p.athlete.displayName),
+      pos: (p.position && p.position.abbreviation) || ""
+    });
+    const roster = r.roster || [];
+    out[r.homeAway] = {
+      formation: r.formation || "",
+      starters: roster.filter(p => p.starter).map(map),
+      subs: roster.filter(p => !p.starter && p.subbedIn).map(map)   // only subs actually used
+    };
+  });
+  return (out.home && out.away) ? out : null;
+}
 
 function buildEspnIndex(data){
   (data.events || []).forEach(ev => {
@@ -1627,19 +1711,25 @@ async function loadEspnIndex(){
     try { localStorage.setItem(ESPN_IDX_KEY, JSON.stringify(ESPN_BY_PAIR)); } catch (e) {}
   } catch (err) { /* offline / blocked — cards just won't show */ }
 }
+// cards + substitutions from keyEvents, ready to merge into the timeline
 function parseEspnCards(data){
   const out = [];
+  const pname = (e, i) => (e.participants && e.participants[i] && e.participants[i].athlete &&
+                           e.participants[i].athlete.displayName) || "";
   (data.keyEvents || []).forEach(e => {
     const tp = (e.type && e.type.type) || "";
-    // tp is e.g. "yellow-card", "red-card", "yellow-red-card", "var---red-card-upgrade"
-    let kind = null;
-    if (/red-card/.test(tp)) kind = "red";          // straight red, second yellow, or VAR upgrade
-    else if (/yellow-card/.test(tp)) kind = "yellow";
+    // tp is e.g. "yellow-card", "red-card", "yellow-red-card", "var---red-card-upgrade", "substitution"
+    let kind = null, name = "";
+    if (/red-card/.test(tp)) { kind = "red"; name = shortName(pname(e, 0)); }      // straight red, 2nd yellow, VAR upgrade
+    else if (/yellow-card/.test(tp)) { kind = "yellow"; name = shortName(pname(e, 0)); }
+    else if (tp === "substitution") {                                              // [0]=in, [1]=out
+      kind = "sub";
+      name = `<span class="md-subtxt"><span class="md-subin">${shortName(pname(e, 0))}</span> ` +
+             `<span class="md-subout">⇄ ${shortName(pname(e, 1))}</span></span>`;
+    }
     if (!kind) return;
     out.push({
-      kind,
-      name: (e.participants && e.participants[0] && e.participants[0].athlete &&
-             e.participants[0].athlete.displayName) || "",
+      kind, name,
       min: (e.clock && e.clock.displayValue) || "",
       minSort: (e.clock && typeof e.clock.value === "number") ? e.clock.value / 60 : 999,
       teamId: (e.team && String(e.team.id)) || ""
@@ -1648,15 +1738,29 @@ function parseEspnCards(data){
   return out;
 }
 const espnEntry = (a, b) => (FIFA[a] && FIFA[b]) ? ESPN_BY_PAIR[[FIFA[a], FIFA[b]].sort().join("|")] : null;
-async function fetchEspnCards(entry){
-  if (Array.isArray(espnCards[entry.id])) return espnCards[entry.id];
+async function fetchEspnSummary(entry){
+  if (Array.isArray(espnCards[entry.id])) return;     // already loaded
   espnCards[entry.id] = "pending";
+  espnLineups[entry.id] = "pending";
   try {
     const res = await fetch(`${ESPN}/summary?event=${entry.id}`);
     if (!res.ok) throw 0;
-    espnCards[entry.id] = parseEspnCards(await res.json());
-  } catch (err) { espnCards[entry.id] = "error"; }
-  return espnCards[entry.id];
+    const data = await res.json();
+    espnCards[entry.id] = parseEspnCards(data);
+    espnLineups[entry.id] = parseEspnLineups(data) || "error";
+  } catch (err) {
+    espnCards[entry.id] = "error";
+    espnLineups[entry.id] = "error";
+  }
+}
+// lineups oriented to our layout: top = team a (left), bottom = team b (right)
+function lineupFor(a, b){
+  const entry = espnEntry(a, b);
+  if (!entry) return null;
+  const lu = espnLineups[entry.id];
+  if (!lu || typeof lu === "string") return lu;   // null | "pending" | "error" | undefined
+  const aIsHome = FIFA[a] === entry.homeAbbr;
+  return { top: aIsHome ? lu.home : lu.away, bottom: aIsHome ? lu.away : lu.home };
 }
 // cards for a match, with each placed on the L/R side matching the card layout
 function espnCardsFor(a, b){
@@ -1670,6 +1774,51 @@ function espnCardsFor(a, b){
   });
 }
 
+// split starters into pitch rows: [GK], [defenders], [mids]…, [forwards] using the formation
+function formationLines(team){
+  const nums = (team.formation || "").split("-").map(n => parseInt(n, 10)).filter(Boolean);
+  const order = (team.starters || []).slice();
+  if (!nums.length || order.length < 11) return null;
+  const gk = order.findIndex(p => p.pos === "G");        // make sure the keeper is first
+  if (gk > 0) order.unshift(order.splice(gk, 1)[0]);
+  const lines = [[order[0]]];
+  let i = 1;
+  for (const n of nums) { lines.push(order.slice(i, i + n)); i += n; }
+  return i === order.length ? lines : null;              // formation must consume all 11
+}
+function luCircle(p, grey){
+  return `<div class="lu-p">
+      <span class="lu-num${grey ? " g" : ""}">${p.num}</span>
+      <span class="lu-name">${p.name}</span>
+    </div>`;
+}
+function luHalf(team, bottom){
+  const lines = formationLines(team);
+  if (!lines) return null;
+  const rows = (bottom ? lines.slice().reverse() : lines)
+    .map(row => `<div class="lu-row">${row.map(p => luCircle(p, bottom)).join("")}</div>`).join("");
+  const form = `<div class="lu-form">${team.formation}</div>`;
+  return `<div class="lu-half ${bottom ? "bottom" : "top"}">${bottom ? rows + form : form + rows}</div>`;
+}
+function luSubs(team, label){
+  if (!team.subs || !team.subs.length) return "";
+  return `<div class="lu-subs"><b>${label}:</b> ${team.subs.map(p => `${p.num} ${p.name}`).join(", ")}</div>`;
+}
+function buildLineups(lu, tA, tB){
+  const top = luHalf(lu.top, false), bottom = luHalf(lu.bottom, true);
+  if (top && bottom) {                                   // pitch view
+    return `<div class="lu-pitch">${top}${bottom}</div>
+      ${luSubs(lu.top, tA.mn)}${luSubs(lu.bottom, tB.mn)}`;
+  }
+  // fallback: plain two-column list
+  const col = (team, name) => `<div class="lu-col">
+      <div class="lu-lt">${name} <span>${team.formation}</span></div>
+      ${team.starters.map(p => `<div class="lu-li"><b>${p.num}</b> ${p.name}</div>`).join("")}
+    </div>`;
+  return `<div class="lu-list">${col(lu.top, tA.mn)}${col(lu.bottom, tB.mn)}</div>
+    ${luSubs(lu.top, tA.mn)}${luSubs(lu.bottom, tB.mn)}`;
+}
+
 function showMatchDetail(card){
   const [a, b] = card.dataset.teams.split("|");
   const [d, , , t] = card.dataset.id.split("|");
@@ -1679,11 +1828,13 @@ function showMatchDetail(card){
   const tB = b === "TBD" ? { mn: MN.TBD, flag:"", emoji:"⚽" } : codeToTeam(FIFA[b]);
   const g = (FIFA[a] && FIFA[b]) ? GAME_BY_PAIR[[FIFA[a], FIFA[b]].sort().join("|")] : null;
 
-  let scoreHTML = `<span class="vsbig">VS</span>`, statusHTML = "", evHTML = "", hlHTML = "";
+  let scoreHTML = `<span class="vsbig">VS</span>`, statusHTML = "", evHTML = "", hlHTML = "", luBodyHTML = "", subsBodyHTML = "";
+  let started = false;
   if (g) {
     const finished = String(g.finished).toUpperCase() === "TRUE";
     const live = String(g.time_elapsed).toLowerCase() === "live";
     if (finished || live) {
+      started = true;
       const homeIsA = FIFA[a] === API_ID_TO_CODE[g.home_team_id];
       const s1 = homeIsA ? g.home_score : g.away_score;
       const s2 = homeIsA ? g.away_score : g.home_score;
@@ -1693,25 +1844,48 @@ function showMatchDetail(card){
         : `<span class="md-status">Дууссан</span>`;
       const goals = parseScorers(g.home_scorers).map(e => ({ ...e, kind: "goal", side: homeIsA ? "L" : "R" }))
         .concat(parseScorers(g.away_scorers).map(e => ({ ...e, kind: "goal", side: homeIsA ? "R" : "L" })));
-      // merge ESPN cards with goals into one chronological timeline; cards load lazily
+      // timeline = goals + cards (subs live in their own tab); loads lazily
       const paintTimeline = () => {
         const cl = espnCardsFor(a, b);
-        const merged = (Array.isArray(cl) ? goals.concat(cl) : goals.slice())
-          .sort((x, y) => x.minSort - y.minSort);
+        const cards = Array.isArray(cl) ? cl.filter(x => x.kind !== "sub") : [];
+        const merged = goals.concat(cards).sort((x, y) => x.minSort - y.minSort);
         let html = merged.length
           ? merged.map(evRow).join("")
           : `<div class="md-noev">⚽ Гоол ороогүй</div>`;
         if (cl === "pending" || (espnEntry(a, b) && cl === undefined))
-          html += `<div class="md-cardnote">Карт ачааллаж байна…</div>`;
+          html += `<div class="md-cardnote">Үйл явдал ачааллаж байна…</div>`;
         return html;
       };
       evHTML = paintTimeline();
+      // substitutions tab
+      const paintSubs = () => {
+        const cl = espnCardsFor(a, b);
+        if (cl === "pending" || (espnEntry(a, b) && cl === undefined))
+          return `<div class="md-cardnote">Сэлгээ ачааллаж байна…</div>`;
+        const subs = (Array.isArray(cl) ? cl.filter(x => x.kind === "sub") : [])
+          .sort((x, y) => x.minSort - y.minSort);
+        return subs.length ? subs.map(evRow).join("") : `<div class="md-noev">🔄 Сэлгээ хийгээгүй</div>`;
+      };
+      subsBodyHTML = paintSubs();
+      // starting line-ups — same ESPN summary fetch supplies these
+      const paintLuBody = () => {
+        const lu = lineupFor(a, b);
+        if (lu === "pending" || lu === undefined)
+          return `<div class="md-cardnote">Бүрэлдэхүүн ачааллаж байна…</div>`;
+        if (!lu || lu === "error") return `<div class="md-noev">Бүрэлдэхүүн мэдээлэл алга</div>`;
+        return buildLineups(lu, tA, tB);
+      };
+      luBodyHTML = paintLuBody();
       const entry = espnEntry(a, b);
       if (entry && !Array.isArray(espnCards[entry.id])) {
-        fetchEspnCards(entry).then(() => {
+        fetchEspnSummary(entry).then(() => {
           if (mdOverlay.dataset.pair !== card.dataset.teams) return;  // user moved on
           const box = mdContent.querySelector(".md-events");
           if (box) box.innerHTML = paintTimeline();
+          const lub = mdContent.querySelector(".lu-body");
+          if (lub) lub.innerHTML = paintLuBody();
+          const sb = mdContent.querySelector(".md-subs-body");
+          if (sb) sb.innerHTML = paintSubs();
         });
       }
       // highlights: only show when a clip id is provided for this match
@@ -1746,13 +1920,36 @@ function showMatchDetail(card){
        <div class="md-team">${mdFlag(tB)}<span>${tB.mn}</span></div>
      </div>
      <div class="md-sub">${dateMN(d, true)} · ${t} (УБ цагаар)</div>
-     <div class="md-events">${evHTML}</div>
-     ${hlHTML}
-     ${footHTML}`;
+     ${started ? `
+       <div class="md-tabs">
+         <button class="md-tab active" data-tab="detail">Дэлгэрэнгүй</button>
+         <button class="md-tab" data-tab="subs">Сэлгээ</button>
+         <button class="md-tab" data-tab="lineup">Бүрэлдэхүүн</button>
+       </div>
+       <div class="md-panel" data-panel="detail">
+         <div class="md-events">${evHTML}</div>
+         ${hlHTML}${footHTML}
+       </div>
+       <div class="md-panel hidden" data-panel="subs">
+         <div class="md-events md-subs-body">${subsBodyHTML}</div>
+       </div>
+       <div class="md-panel hidden" data-panel="lineup">
+         <div class="lu-body">${luBodyHTML}</div>
+       </div>`
+     : `<div class="md-events">${evHTML}</div>${footHTML}`}`;
   mdOverlay.dataset.pair = card.dataset.teams;
   mdOverlay.classList.add("open");
 }
 function closeMatchDetail(){ mdOverlay.classList.remove("open"); }
+
+// tab switching inside the modal (Дэлгэрэнгүй / Бүрэлдэхүүн)
+mdContent.addEventListener("click", e => {
+  const tab = e.target.closest(".md-tab");
+  if (!tab) return;
+  mdContent.querySelectorAll(".md-tab").forEach(t => t.classList.toggle("active", t === tab));
+  mdContent.querySelectorAll(".md-panel")
+    .forEach(p => p.classList.toggle("hidden", p.dataset.panel !== tab.dataset.tab));
+});
 
 cards.forEach(card => {
   card.addEventListener("click", e => {
